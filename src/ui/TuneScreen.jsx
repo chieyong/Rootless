@@ -8,15 +8,20 @@ import LeadSheet from './LeadSheet.jsx';
 import VoicingRow from './VoicingRow.jsx';
 import { keyboardRange } from './keyboardLayout.js';
 
+/**
+ * Shell comes first, and is the default: root, third and seventh are what a
+ * beginner should learn. Rootless voicings assume a bass player.
+ * The first entry is also the fallback for an unreadable stored preference.
+ */
 const VOICING_SETS = [
-  { id: 'rootless', label: 'Rootless', forms: ['rootless-A', 'rootless-B'] },
   { id: 'shell', label: 'Shell', forms: ['shell-1-3-7', 'shell-1-7-3'] },
+  { id: 'rootless', label: 'Rootless', forms: ['rootless-A', 'rootless-B'] },
 ];
 
 /** One tune: the chart, the sound and the way into the quiz. */
 export default function TuneScreen({ tune: original, onBack, onQuiz }) {
   const [mode, setMode] = useStored('sheet:mode', 'symbols');
-  const [voicingSet, setVoicingSet] = useStored('sheet:voicings', 'rootless');
+  const [voicingSet, setVoicingSet] = useStored('sheet:voicings', 'shell');
   const [bpm, setBpm] = useStored('player:bpm', 120);
   const [loop, setLoop] = useStored('player:loop', false);
   const [keyIndex, setKeyIndex] = useState(null);

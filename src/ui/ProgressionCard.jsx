@@ -8,10 +8,17 @@ import VoicingRow from './VoicingRow.jsx';
 
 const BEATS_PER_CHORD = 2;
 
+/** Shell first, like everywhere else: it is what a beginner should read. */
+const DEFAULT_FORMS = ['shell-1-3-7', 'shell-1-7-3'];
+
 /** Analyses a progression, shows the voice-led voicings and plays them. */
-export default function ProgressionCard({ symbols, musicKey, audio, arpeggio = false, bpm = 100 }) {
+export default function ProgressionCard({
+  symbols, musicKey, audio, arpeggio = false, bpm = 100, forms = DEFAULT_FORMS,
+}) {
   const { entries, groups } = analyzeProgression(symbols, musicKey);
-  const voicings = useMemo(() => voiceLeadProgression(symbols), [symbols]);
+  // Passed explicitly: the library default is rootless, which is not the
+  // starting point this screen wants to show.
+  const voicings = useMemo(() => voiceLeadProgression(symbols, { forms }), [symbols, forms]);
   const modulations = findModulations(symbols, musicKey);
   // One range for the whole progression, so the voice leading is visible as movement.
   const range = keyboardRange(voicings.filter(Boolean).flatMap((v) => v.midi));
@@ -78,7 +85,7 @@ export default function ProgressionCard({ symbols, musicKey, audio, arpeggio = f
         </p>
       )}
 
-      <h2 style={{ marginTop: '1.25rem' }}>Voice-led rootless voicings</h2>
+      <h2 style={{ marginTop: '1.25rem' }}>Voice-led voicings</h2>
       {symbols.map((symbol, index) => {
         const voicing = voicings[index];
         if (!voicing) return null;
@@ -87,7 +94,7 @@ export default function ProgressionCard({ symbols, musicKey, audio, arpeggio = f
             key={`${symbol}-${index}`}
             voicing={voicing}
             range={range}
-            title={`${symbol} ${voicing.form.replace('rootless-', '')}`}
+            title={`${symbol} ${voicing.form.replace(/^(rootless|shell)-/, '')}`}
             playing={audio?.playing && audio.step === index}
             onPlay={audio ? (v) => audio.playChord(v, { arpeggio }) : null}
             note={index > 0
