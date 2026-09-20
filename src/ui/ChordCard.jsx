@@ -2,11 +2,11 @@ import React from 'react';
 import {
   chordNoteNames, formatChord, romanNumeral, voicingsFor,
 } from '../theory/index.js';
-import { keyboardRange } from './Keyboard.jsx';
+import { keyboardRange } from './keyboardLayout.js';
 import VoicingRow from './VoicingRow.jsx';
 
-/** Shows what the engine makes of a single chord symbol. */
-export default function ChordCard({ chord, musicKey }) {
+/** Shows what the engine makes of a single chord symbol, and plays it. */
+export default function ChordCard({ chord, musicKey, audio, arpeggio = false }) {
   const voicings = voicingsFor(chord);
   // One shared range, so the four shapes can be compared at a glance.
   const range = keyboardRange(voicings.flatMap((v) => v.midi));
@@ -25,7 +25,13 @@ export default function ChordCard({ chord, musicKey }) {
 
       <h2 style={{ marginTop: '1.25rem' }}>Voicings</h2>
       {voicings.map((voicing) => (
-        <VoicingRow key={voicing.form} voicing={voicing} range={range} labels />
+        <VoicingRow
+          key={voicing.form}
+          voicing={voicing}
+          range={range}
+          labels
+          onPlay={audio ? (v) => audio.playChord(v, { arpeggio }) : null}
+        />
       ))}
     </div>
   );

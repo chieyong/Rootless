@@ -571,3 +571,52 @@ footer {
 }
 
 .tab[aria-current='page'] { color: var(--accent); border-color: var(--accent-dim); }
+
+/* --- Play buttons ----------------------------------------------------- */
+
+.play-button {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  background: var(--surface-raised);
+  color: var(--accent);
+  cursor: pointer;
+  padding: 0;
+}
+
+.play-button.small { width: 2.25rem; height: 2.25rem; }
+.play-button.large { width: var(--tap); height: var(--tap); }
+
+.play-button svg { width: 60%; height: 60%; }
+
+.play-button.active {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #1a1408;
+}
+
+.voicing-head .play-button { margin-right: 0.5rem; }
+
+.voicing-head-left {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+}
+
+.card-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.bar.sounding {
+  border-color: var(--accent);
+  background: var(--accent);
+  color: #1a1408;
+}
+
+.bar.sounding .bar-roman { color: #5a4718; }

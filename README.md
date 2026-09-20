@@ -82,6 +82,10 @@ Every module has unit tests in `src/theory/__tests__/`.
 | `voicings.js` | shell (1-3-7, 1-7-3) and rootless A/B voicings in the left-hand register |
 | `voiceLeading.js` | picks the voicings with the least movement across a progression |
 
+Every voicing has a play button, in the Lab and on a tune alike, and a
+progression can be played as a whole to hear the voice leading. The Lab
+chooses between block chords and arpeggios and sets its own tempo.
+
 The screen draws every voicing on a piano keyboard with the played keys lit up.
 Within a card all keyboards share one range, so shell and rootless shapes can be
 compared directly, and the voice leading through a progression is visible as

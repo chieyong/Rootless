@@ -173,6 +173,7 @@ export default function TuneScreen({ tune: original, onBack, onQuiz }) {
               range={range}
               title={`${slot.symbol} ${voicing.form.replace('rootless-', '').replace('shell-', '')}`}
               labels
+              onPlay={(v) => player.playChord(v)}
             />
           ))}
           <button

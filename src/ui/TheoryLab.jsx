@@ -1,5 +1,8 @@
 import React, { useMemo, useState } from 'react';
 import { COMMON_KEYS, parseChord, parseKey, transposeProgression } from '../theory/index.js';
+import useAudio from '../audio/useAudio.js';
+import useStored from '../storage/useStored.js';
+import AudioHint from './AudioHint.jsx';
 import ChordCard from './ChordCard.jsx';
 import ProgressionCard from './ProgressionCard.jsx';
 
@@ -13,6 +16,9 @@ const EXAMPLES = [
 
 /** A lab for checking the theory engine by hand: parse, analyse, transpose. */
 export default function TheoryLab() {
+  const audio = useAudio();
+  const [arpeggio, setArpeggio] = useStored('lab:arpeggio', false);
+  const [bpm, setBpm] = useStored('lab:bpm', 100);
   const [symbolInput, setSymbolInput] = useState('G7alt');
   const [example, setExample] = useState(0);
   const [keyIndex, setKeyIndex] = useState(0);
@@ -33,7 +39,41 @@ export default function TheoryLab() {
   return (
     <main>
       <h1>Lab</h1>
-      <p className="tagline">Check any chord, in any key</p>
+      <p className="tagline">Check any chord, in any key — and hear it</p>
+
+      <div className="card">
+        <div className="chips" style={{ marginTop: 0 }}>
+          <button
+            type="button"
+            className="chip"
+            aria-pressed={!arpeggio}
+            onClick={() => setArpeggio(false)}
+          >
+            Block
+          </button>
+          <button
+            type="button"
+            className="chip"
+            aria-pressed={arpeggio}
+            onClick={() => setArpeggio(true)}
+          >
+            Arpeggio
+          </button>
+        </div>
+        <div className="tempo">
+          <input
+            type="range"
+            min="50"
+            max="200"
+            step="2"
+            value={bpm}
+            onChange={(event) => setBpm(Number(event.target.value))}
+            aria-label="Tempo for the progression"
+          />
+          <span className="tempo-value">{bpm} bpm</span>
+        </div>
+        <AudioHint state={audio.state} />
+      </div>
 
       <div className="card">
         <label className="label" htmlFor="symbol">Chord symbol</label>
@@ -63,7 +103,7 @@ export default function TheoryLab() {
       </div>
 
       {chord
-        ? <ChordCard chord={chord} musicKey={targetKey} />
+        ? <ChordCard chord={chord} musicKey={targetKey} audio={audio} arpeggio={arpeggio} />
         : <p className="card error">Not a chord symbol yet.</p>}
 
       <div className="card">
@@ -98,7 +138,13 @@ export default function TheoryLab() {
         </div>
       </div>
 
-      <ProgressionCard symbols={symbols} musicKey={targetKey} />
+      <ProgressionCard
+        symbols={symbols}
+        musicKey={targetKey}
+        audio={audio}
+        arpeggio={arpeggio}
+        bpm={bpm}
+      />
 
     </main>
   );
