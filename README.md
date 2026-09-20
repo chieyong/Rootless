@@ -4,6 +4,13 @@ A mobile web app (PWA) for learning jazz harmony away from the piano: memorise
 the changes of standards, and recognise jazz chords by ear. Built for the
 iPhone via "Add to Home Screen".
 
+It is aimed at someone who plays **solo** jazz piano. There is no bass player,
+which decides what the app teaches and in what order: shell voicings first,
+because root, third and seventh carry a tune on their own; then the two-handed
+grip, root in the left hand and a rootless shape in the right. A rootless
+voicing on its own states no root, so here it is a right-hand device rather
+than a way to comp.
+
 ## Status
 
 **Phases 1 and 2 are done:** the theory engine, and the Changes module -
@@ -79,8 +86,18 @@ Every module has unit tests in `src/theory/__tests__/`.
 | `keys.js` | keys, key signatures, scales, diatonic chords |
 | `analysis.js` | roman numerals, secondary dominants, tritone subs, ii-V detection, modulations |
 | `transpose.js` | transposition with the enharmonic spelling of the destination key |
-| `voicings.js` | shell (1-3-7, 1-7-3) and rootless A/B voicings in the left-hand register |
-| `voiceLeading.js` | picks the voicings with the least movement across a progression |
+| `voicings.js` | shell (1-3-7, 1-7-3), rootless A/B, and the two-handed solo grip; where each sits is register data, not code |
+| `voiceLeading.js` | picks the voicings with the least movement across a progression; between two split voicings it compares right hands only |
+
+### The voicing forms
+
+| form | what it is |
+| --- | --- |
+| `shell-1-3-7` | root, third, seventh - the left-hand shape to learn first |
+| `shell-1-7-3` | the same notes, seventh under the third; alternate the two through a ii-V and the hand barely moves |
+| `rootless-A` | 3-5-7-9 (3-13-b7-9 on a dominant), no root - a right-hand shape when you play solo |
+| `rootless-B` | the A shape with its two lowest notes an octave up |
+| `solo-root-rootless` | the everyday solo grip: the root alone in the left hand, the rootless A shape in the right, around F4. The hands are placed together so the gap between them stays between 7 and 19 semitones - closer sounds muddy down there, wider leaves a hole. On a m7b5 or dim7 the right hand takes the tension instead of the root the left hand is already playing. |
 
 Every voicing has a play button, in the Lab and on a tune alike, and a
 progression can be played as a whole to hear the voice leading. The Lab
@@ -108,6 +125,13 @@ voiceLeadProgression(['Dm7', 'G7', 'Cmaj7']).map((v) => v.form);
 ### Conventions
 
 - MIDI numbers use scientific pitch notation: C4 = middle C = 60.
+- Voicings carry `hands: { lh, rh }`. `midi` stays a flat ascending array
+  equal to both hands together, so anything that only wants notes can ignore
+  the split.
+- Where a voicing sits is a register: a map from form id to a placement rule,
+  passed in rather than read from module scope. `SOLO_REGISTER` is the only
+  one today; a band register can be passed to `buildVoicing`,
+  `voicingCandidates` and `voiceLeadProgression` without changing them.
 - Roman numerals are read against the **major** scale of the key, as jazz
   analysis does it: in C minor, Eb is `bIII` and Bb7 is `bVII7`.
 - Chord tones keep their theoretical spelling, so a diminished seventh really

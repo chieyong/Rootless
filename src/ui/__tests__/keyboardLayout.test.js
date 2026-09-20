@@ -28,6 +28,20 @@ describe('keyboardRange', () => {
     expect(keyboardRange([60, 64])).toEqual({ from: 60, to: 83 });
   });
 
+  it('fits the keys to the notes when asked not to snap', () => {
+    // A two-handed voicing padded to whole octaves spans four of them, which
+    // is unreadable at phone width.
+    expect(keyboardRange([45, 60, 63, 67, 74], { snapToOctaves: false }))
+      .toEqual({ from: 45, to: 74 });
+    expect(keyboardRange([45, 60, 63, 67, 74]))
+      .toEqual({ from: 36, to: 83 });
+  });
+
+  it('starts and ends a non-snapped range on white keys', () => {
+    // Eb2 up to Ab4: a black key at either end would have nothing to sit against.
+    expect(keyboardRange([39, 68], { snapToOctaves: false })).toEqual({ from: 38, to: 69 });
+  });
+
   it('covers a whole progression when the notes are pooled', () => {
     const midi = ['Dm7', 'G7', 'Cmaj7'].flatMap((s) => buildVoicing(s, 'rootless-A').midi);
     const { from, to } = keyboardRange(midi);

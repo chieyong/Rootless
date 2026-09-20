@@ -2,6 +2,7 @@ import React, { useId, useState } from 'react';
 import { voicingNoteNames } from '../theory/index.js';
 import { voicingCopy } from '../content/voicingCopy.js';
 import Keyboard from './Keyboard.jsx';
+import { keyboardRange } from './keyboardLayout.js';
 import PlayButton from './PlayButton.jsx';
 
 /**
@@ -24,6 +25,13 @@ export default function VoicingRow({
   const name = title ?? voicing.label;
   const notes = voicingNoteNames(voicing);
   const copy = explain ? voicingCopy(voicing.form) : null;
+  // Boolean, not a length: `0 && ...` renders a literal 0 in JSX.
+  const split = Boolean(voicing.hands?.lh?.length && voicing.hands?.rh?.length);
+  // A split voicing spans the best part of three octaves on its own. Sharing
+  // a range across a whole tune would push it to four and squeeze the keys
+  // below reading size on a phone, so it gets a range of its own. One-handed
+  // shapes keep the shared range, which is what makes them comparable.
+  const keyRange = split ? keyboardRange(voicing.midi, { snapToOctaves: false }) : range;
 
   return (
     <div className="voicing-block">
@@ -55,10 +63,17 @@ export default function VoicingRow({
       </div>
       <Keyboard
         midi={voicing.midi}
-        range={range}
+        range={keyRange}
         labels={labels}
+        hands={voicing.hands}
         ariaLabel={`${name}: ${notes.join(' ')}`}
       />
+      {split && (
+        <p className="hand-legend">
+          <span className="swatch lh" aria-hidden="true" /> left hand
+          <span className="swatch rh" aria-hidden="true" /> right hand
+        </p>
+      )}
       <div className="voicing-degrees">
         {voicing.degrees.join(' · ')}
         {note ? ` · ${note}` : ''}

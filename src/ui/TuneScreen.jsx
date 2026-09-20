@@ -9,14 +9,26 @@ import VoicingRow from './VoicingRow.jsx';
 import { keyboardRange } from './keyboardLayout.js';
 
 /**
- * Shell comes first, and is the default: root, third and seventh are what a
- * beginner should learn. Rootless voicings assume a bass player.
+ * Shell comes first, and is the default: root, third and seventh are what to
+ * learn first and they carry a tune on their own. Solo is the two-handed
+ * grip. Rootless last - on its own it states no root, so playing alone it
+ * belongs in the right hand, which is what the Solo set gives you.
  * The first entry is also the fallback for an unreadable stored preference.
  */
 const VOICING_SETS = [
   { id: 'shell', label: 'Shell', forms: ['shell-1-3-7', 'shell-1-7-3'] },
+  { id: 'solo', label: 'Solo', forms: ['solo-root-rootless'] },
   { id: 'rootless', label: 'Rootless', forms: ['rootless-A', 'rootless-B'] },
 ];
+
+/** Short name for a form, for the bar-detail heading beside the chord symbol. */
+const SHORT_FORM = {
+  'shell-1-3-7': '1-3-7',
+  'shell-1-7-3': '1-7-3',
+  'rootless-A': 'A',
+  'rootless-B': 'B',
+  'solo-root-rootless': 'solo',
+};
 
 /** One tune: the chart, the sound and the way into the quiz. */
 export default function TuneScreen({ tune: original, onBack, onQuiz }) {
@@ -180,7 +192,7 @@ export default function TuneScreen({ tune: original, onBack, onQuiz }) {
               key={slot.index}
               voicing={voicing}
               range={range}
-              title={`${slot.symbol} ${voicing.form.replace('rootless-', '').replace('shell-', '')}`}
+              title={`${slot.symbol} ${SHORT_FORM[voicing.form] ?? voicing.form}`}
               labels
               onPlay={(v) => player.playChord(v)}
             />

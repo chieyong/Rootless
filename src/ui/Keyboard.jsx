@@ -11,6 +11,8 @@ export { keyboardRange };
  * `range`     - { from, to }; defaults to the notes themselves, snapped to octaves
  * `labels`    - show the note name on each highlighted key
  * `markLowest`- draw the bottom note in a deeper shade (the bass of the voicing)
+ * `hands`     - { lh, rh }; when both are filled, the two hands are coloured
+ *               apart, because the distance between them is the thing to see
  */
 export default function Keyboard({
   midi = [],
@@ -18,12 +20,16 @@ export default function Keyboard({
   height = 58,
   labels = false,
   markLowest = true,
+  hands = null,
   ariaLabel = null,
 }) {
   const clipId = useId();
   const played = new Set(midi);
   const lowest = midi.length ? Math.min(...midi) : null;
   const { from, to } = range ?? keyboardRange(midi.length ? midi : [60, 71]);
+
+  const split = hands?.lh?.length && hands?.rh?.length ? hands : null;
+  const rightHand = new Set(split ? split.rh : []);
 
   const whiteWidth = 20;
   const blackWidth = whiteWidth * 0.62;
@@ -32,6 +38,7 @@ export default function Keyboard({
 
   const fillFor = (note, dark) => {
     if (!played.has(note)) return dark ? 'var(--key-black)' : 'var(--key-white)';
+    if (split) return rightHand.has(note) ? 'var(--key-on)' : 'var(--key-on-low)';
     return markLowest && note === lowest ? 'var(--key-on-low)' : 'var(--key-on)';
   };
 

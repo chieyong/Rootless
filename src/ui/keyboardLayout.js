@@ -18,11 +18,26 @@ export const octaveOf = (midi) => Math.floor(midi / 12) - 1;
 /**
  * Snaps a set of notes outwards to whole octaves (C up to B), so every
  * keyboard starts on a C and shapes stay comparable between chords.
+ *
+ * `snapToOctaves: false` fits the keys to the notes instead. Snapping costs
+ * up to eleven semitones at each end, which a two-handed voicing cannot
+ * afford: padded out it spans four octaves, and at phone width the keys stop
+ * being readable. The ends still fall on white keys, or the first key would
+ * be a black one with nothing to sit against.
  */
-export function keyboardRange(midiNumbers, { minOctaves = 2 } = {}) {
+export function keyboardRange(midiNumbers, { minOctaves = 2, snapToOctaves = true } = {}) {
   if (!midiNumbers.length) return { from: 60, to: 71 };
   const low = Math.min(...midiNumbers);
   const high = Math.max(...midiNumbers);
+
+  if (!snapToOctaves) {
+    let from = low;
+    let to = high;
+    while (!isWhiteKey(from)) from -= 1;
+    while (!isWhiteKey(to)) to += 1;
+    return { from, to };
+  }
+
   const from = Math.floor(low / 12) * 12;
   let to = Math.ceil((high + 1) / 12) * 12 - 1;
   while (to - from + 1 < minOctaves * 12) to += 12;
