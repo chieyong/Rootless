@@ -101,8 +101,8 @@ export default function TuneScreen({ tune: original, onBack, onQuiz }) {
           ))}
         </div>
         <p className="voicing-guidance">
-          Shell first: 1-3-7 is enough to play a whole tune. Rootless comes
-          later, when there is a bass player.
+          Shell voicings first - root, third and seventh are enough to carry a
+          tune on your own. Add the right hand once those are automatic.
         </p>
 
         <div className="tempo">
