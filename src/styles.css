@@ -620,3 +620,53 @@ footer {
 }
 
 .bar.sounding .bar-roman { color: #5a4718; }
+
+/* --- Voicing explanations --------------------------------------------- */
+
+.voicing-name.as-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3125rem;
+  background: none;
+  border: 0;
+  padding: 0.375rem 0 0.375rem 0;
+  font: inherit;
+  font-size: 0.875rem;
+  color: var(--text-dim);
+  text-align: left;
+  cursor: pointer;
+}
+
+.caret {
+  width: 0;
+  height: 0;
+  border-left: 0.25rem solid transparent;
+  border-right: 0.25rem solid transparent;
+  border-top: 0.3125rem solid var(--accent);
+}
+
+.caret.open { transform: rotate(180deg); }
+
+.voicing-copy { margin-top: 0.125rem; }
+
+.voicing-short {
+  margin: 0;
+  font-size: 0.75rem;
+  color: var(--text-dim);
+}
+
+.voicing-why {
+  margin: 0.375rem 0 0;
+  font-size: 0.8125rem;
+  line-height: 1.5;
+  color: var(--text);
+  border-left: 2px solid var(--accent-dim);
+  padding-left: 0.625rem;
+}
+
+.voicing-guidance {
+  font-size: 0.8125rem;
+  line-height: 1.5;
+  color: var(--text-dim);
+  margin: 0.625rem 0 0;
+}

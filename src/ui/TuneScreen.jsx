@@ -100,6 +100,10 @@ export default function TuneScreen({ tune: original, onBack, onQuiz }) {
             </button>
           ))}
         </div>
+        <p className="voicing-guidance">
+          Shell first: 1-3-7 is enough to play a whole tune. Rootless comes
+          later, when there is a bass player.
+        </p>
 
         <div className="tempo">
           <input
