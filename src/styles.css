@@ -16,6 +16,15 @@
   --green: #7bc496;
   --red: #e07a6a;
 
+  /* Keyboard */
+  --key-white: #cfd4de;
+  --key-black: #171a21;
+  --key-line: #12141a;
+  --key-on: #e8b04b;
+  --key-on-low: #c4832b;
+  --key-label-on: #2a1f0c;
+  --key-label-off: #8b90a0;
+
   --radius: 0.875rem;
   --tap: 2.75rem; /* minimum tap target */
 
@@ -197,6 +206,30 @@ textarea.field {
 .voicing-name { font-size: 0.875rem; color: var(--text-dim); min-width: 6.5rem; }
 .voicing-notes { font-size: 1.0625rem; letter-spacing: 0.03em; }
 .voicing-degrees { font-size: 0.75rem; color: var(--text-dim); }
+
+.keyboard {
+  display: block;
+  width: 100%;
+  height: auto;
+  margin-top: 0.5rem;
+  border-radius: 3px;
+}
+
+.voicing-block {
+  padding: 0.75rem 0;
+  border-bottom: 1px solid var(--line);
+}
+
+.voicing-block:last-child { border-bottom: 0; }
+
+.voicing-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 0.75rem;
+}
+
+.voicing-head .voicing-notes { text-align: right; }
 
 .grid {
   display: grid;

@@ -1,13 +1,17 @@
 import React from 'react';
 import {
-  analyzeProgression, findModulations, keyName, voiceLeadProgression, voicingNoteNames,
+  analyzeProgression, findModulations, keyName, voiceLeadProgression,
 } from '../theory/index.js';
+import { keyboardRange } from './Keyboard.jsx';
+import VoicingRow from './VoicingRow.jsx';
 
 /** Analyses a progression and shows the voice-led rootless voicings under it. */
 export default function ProgressionCard({ symbols, musicKey }) {
   const { entries, groups } = analyzeProgression(symbols, musicKey);
   const voicings = voiceLeadProgression(symbols);
   const modulations = findModulations(symbols, musicKey);
+  // One range for the whole progression, so the voice leading is visible as movement.
+  const range = keyboardRange(voicings.filter(Boolean).flatMap((v) => v.midi));
 
   return (
     <div className="card">
@@ -50,23 +54,18 @@ export default function ProgressionCard({ symbols, musicKey }) {
         const voicing = voicings[index];
         if (!voicing) return null;
         return (
-          <div className="voicing" key={`${symbol}-${index}`}>
-            <span className="voicing-name">
-              {symbol} <span className="dim">{voicing.form.replace('rootless-', '')}</span>
-            </span>
-            <span>
-              <span className="voicing-notes readout">
-                {voicingNoteNames(voicing).join(' ')}
-              </span>
-              <br />
-              <span className="voicing-degrees">
-                {voicing.degrees.join(' · ')}
-                {index > 0 ? ` · moves ${voicing.movement} semitones` : ''}
-              </span>
-            </span>
-          </div>
+          <VoicingRow
+            key={`${symbol}-${index}`}
+            voicing={voicing}
+            range={range}
+            title={`${symbol} ${voicing.form.replace('rootless-', '')}`}
+            note={index > 0
+              ? `moves ${voicing.movement} ${voicing.movement === 1 ? 'semitone' : 'semitones'}`
+              : null}
+          />
         );
       })}
+
     </div>
   );
 }

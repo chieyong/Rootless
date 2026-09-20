@@ -45,6 +45,12 @@ Every module has unit tests in `src/theory/__tests__/`.
 | `voicings.js` | shell (1-3-7, 1-7-3) and rootless A/B voicings in the left-hand register |
 | `voiceLeading.js` | picks the voicings with the least movement across a progression |
 
+The screen draws every voicing on a piano keyboard with the played keys lit up.
+Within a card all keyboards share one range, so shell and rootless shapes can be
+compared directly, and the voice leading through a progression is visible as
+movement. The geometry lives in `src/ui/keyboardLayout.js` and is unit tested
+too.
+
 ```js
 import { analyzeProgression, voiceLeadProgression, transposeProgression } from './src/theory/index.js';
 
