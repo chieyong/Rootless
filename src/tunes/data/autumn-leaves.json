@@ -1,0 +1,31 @@
+{
+  "id": "autumn-leaves",
+  "title": "Autumn Leaves",
+  "composer": "Joseph Kosma",
+  "key": "Bb",
+  "tonality": "Bb major / G minor",
+  "timeSignature": "4/4",
+  "form": ["A", "A", "B", "C"],
+  "verified": false,
+  "notes": "Check bars 27-30 of the last section: some charts play | Gm7 C7 | Fm7 Bb7 | Ebmaj7 | Am7b5 D7 |, others keep | Gm7 | Gm7 | Cm7 | F7 |. Bar 8 is often Gm7 G7 going back to the second A.",
+  "sections": [
+    {
+      "id": "A",
+      "label": "A",
+      "bars": ["Cm7", "F7", "Bbmaj7", "Ebmaj7", "Am7b5", "D7", "Gm7", "Gm7"]
+    },
+    {
+      "id": "B",
+      "label": "B",
+      "bars": ["Am7b5", "D7", "Gm7", "Gm7", "Cm7", "F7", "Bbmaj7", "Bbmaj7"]
+    },
+    {
+      "id": "C",
+      "label": "C",
+      "bars": [
+        "Am7b5", "D7", ["Gm7", "C7"], ["Fm7", "Bb7"],
+        "Ebmaj7", ["Am7b5", "D7"], "Gm7", "Gm7"
+      ]
+    }
+  ]
+}

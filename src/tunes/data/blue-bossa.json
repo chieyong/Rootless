@@ -1,0 +1,23 @@
+{
+  "id": "blue-bossa",
+  "title": "Blue Bossa",
+  "composer": "Kenny Dorham",
+  "key": "C minor",
+  "tonality": "C minor, with a bridge in Db major",
+  "timeSignature": "4/4",
+  "form": ["A"],
+  "verified": false,
+  "notes": "16 bars, bossa feel. Bar 16 is written plain here; on the repeat many players turn it around with | Dm7b5 G7alt |. The G7 in bars 6 and 14 is usually played altered or with a b9.",
+  "sections": [
+    {
+      "id": "A",
+      "label": "A",
+      "bars": [
+        "Cm7", "Cm7", "Fm7", "Fm7",
+        "Dm7b5", "G7alt", "Cm7", "Cm7",
+        "Ebm7", "Ab7", "Dbmaj7", "Dbmaj7",
+        "Dm7b5", "G7alt", "Cm7", "Cm7"
+      ]
+    }
+  ]
+}

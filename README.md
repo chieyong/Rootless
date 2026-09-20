@@ -6,8 +6,9 @@ iPhone via "Add to Home Screen".
 
 ## Status
 
-**Phase 1 is done: the theory engine.** Phases 2-4 (tunes, ear training,
-progress tracking) are still to come.
+**Phases 1 and 2 are done:** the theory engine, and the Changes module -
+five standards, a leadsheet you can play, and four kinds of quiz. Phase 3
+(ear training) and phase 4 (progress) are still to come.
 
 ## Getting started
 
@@ -27,6 +28,42 @@ open the network URL shown in the terminal.
 `netlify.toml` is set up for Netlify: connect the repository and it builds with
 `npm run build` and publishes `dist/`. On the phone, open the site in Safari and
 use Share -> Add to Home Screen; the app then runs full screen and works offline.
+
+## The Changes module
+
+Open a tune and you get a leadsheet, four bars to a line, with the sections
+labelled and every ii-V marked with a bracket underneath. Tap a bar to hear
+its voicing and see it on the keyboard; press play to hear the whole tune at
+your own tempo, following the bar that is sounding. Switch the grid between
+chord symbols and degrees, and transpose the whole tune to any of the twelve
+keys. "Practise this tune" gives a five-question round.
+
+| module | what it does |
+| --- | --- |
+| `tunes/data/*.json` | the changes: key, form, sections, bars (one or two chords each) |
+| `tunes/tune.js` | flattens the form into bars and slots, analyses, transposes, validates |
+| `audio/engine.js` | Tone.js, loaded lazily on the first tap; piano samples with a synth fallback |
+| `audio/usePlayer.js` | plays a tune and reports which bar is sounding |
+| `quiz/generators.js` | the four question types as pure functions |
+| `storage/local.js` | the one place that touches localStorage |
+
+### The changes are unverified
+
+Every tune ships with `verified: false` and says so in the app. The changes are
+written from the versions most commonly played, and each tune's `notes` field
+lists the bars that differ between charts - exactly the ones worth checking
+first. Only chord changes are stored: no melodies, no lyrics.
+
+### The four quiz types
+
+1. **What is bar X?** - from memory, without the chart.
+2. **Fill the empty bar** - the same question with the chart in front of you.
+3. **Transpose this passage** - two bars into another key.
+4. **Where does it modulate?** - which key a ii-V is heading for.
+
+The first two can be answered by multiple choice or by building the chord from
+a root and a quality. Answers are compared by sound, not spelling, so `C-7`
+and `Cm7` both count.
 
 ## The theory engine
 

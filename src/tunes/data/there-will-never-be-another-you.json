@@ -1,0 +1,31 @@
+{
+  "id": "there-will-never-be-another-you",
+  "title": "There Will Never Be Another You",
+  "composer": "Harry Warren",
+  "key": "Eb",
+  "tonality": "Eb major",
+  "timeSignature": "4/4",
+  "form": ["A", "B", "A", "C"],
+  "verified": false,
+  "notes": "ABAC, 32 bars. The bars to check: 11-12, written here as | Dbm7 | Gb7 |, which some charts write as | Db7 | Db7 | or | Abm7 Db7 |; bar 16 is F7 here, often played as Bb7 leading back to Eb. In the last section bar 26 | Abm7 Db7 | is sometimes just | Abm7 |.",
+  "sections": [
+    {
+      "id": "A",
+      "label": "A",
+      "bars": ["Ebmaj7", "Ebmaj7", "Dm7b5", "G7", "Cm7", "Cm7", "Bbm7", "Eb7"]
+    },
+    {
+      "id": "B",
+      "label": "B",
+      "bars": ["Abmaj7", "Abmaj7", "Dbm7", "Gb7", "Ebmaj7", "Cm7", "F7", "F7"]
+    },
+    {
+      "id": "C",
+      "label": "C",
+      "bars": [
+        "Abmaj7", ["Abm7", "Db7"], "Ebmaj7", "Cm7",
+        "F7", "Bb7", "Ebmaj7", ["Fm7", "Bb7"]
+      ]
+    }
+  ]
+}

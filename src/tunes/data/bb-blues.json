@@ -1,0 +1,22 @@
+{
+  "id": "bb-blues",
+  "title": "Bb Blues",
+  "composer": "traditional",
+  "key": "Bb",
+  "tonality": "Bb major",
+  "timeSignature": "4/4",
+  "form": ["A"],
+  "verified": false,
+  "notes": "The standard 12-bar jazz blues. Bar 8 is written G7 (V7/ii); simpler charts keep Bb7 there, and bebop heads often play | Dm7 G7 |. Bar 6 Edim7 is the #IVdim passing chord.",
+  "sections": [
+    {
+      "id": "A",
+      "label": "Blues",
+      "bars": [
+        "Bb7", "Eb7", "Bb7", ["Fm7", "Bb7"],
+        "Eb7", "Edim7", "Bb7", "G7",
+        "Cm7", "F7", ["Bb7", "G7"], ["Cm7", "F7"]
+      ]
+    }
+  ]
+}

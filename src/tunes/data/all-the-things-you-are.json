@@ -1,0 +1,37 @@
+{
+  "id": "all-the-things-you-are",
+  "title": "All The Things You Are",
+  "composer": "Jerome Kern",
+  "key": "Ab",
+  "tonality": "Ab major, travelling through C, Eb, G and E",
+  "timeSignature": "4/4",
+  "form": ["A", "A2", "B", "C"],
+  "verified": false,
+  "notes": "36 bars: 8 + 8 + 8 + 12. Bar 30 is written Gb7; many charts have | Dbm7 | or | Dbm7 Gb7 |. Bar 24 is often written C7#5 or C7alt. The last two bars are usually turned around with | Bbm7 Eb7 | back to the top.",
+  "sections": [
+    {
+      "id": "A",
+      "label": "A",
+      "bars": ["Fm7", "Bbm7", "Eb7", "Abmaj7", "Dbmaj7", "G7", "Cmaj7", "Cmaj7"]
+    },
+    {
+      "id": "A2",
+      "label": "A2",
+      "bars": ["Cm7", "Fm7", "Bb7", "Ebmaj7", "Abmaj7", "C7", "Fmaj7", "Fmaj7"]
+    },
+    {
+      "id": "B",
+      "label": "B",
+      "bars": ["Am7", "D7", "Gmaj7", "Gmaj7", "F#m7b5", "B7", "Emaj7", "C7alt"]
+    },
+    {
+      "id": "C",
+      "label": "C",
+      "bars": [
+        "Fm7", "Bbm7", "Eb7", "Abmaj7",
+        "Dbmaj7", "Gb7", "Cm7", "Bdim7",
+        "Bbm7", "Eb7", "Abmaj7", "Abmaj7"
+      ]
+    }
+  ]
+}

@@ -34,10 +34,16 @@ than assuming it is still running.
 
 ## Piano samples cost bandwidth
 
-A realistic piano (Salamander via `Tone.Sampler`) is several megabytes. The
-plan: a small set of samples (one per minor third, `Tone.Sampler` interpolates
-the rest), cached by the service worker after the first load so later sessions
-work offline. First load on a mobile connection will be noticeably slower.
+The piano is the Salamander set, loaded from a CDN: eight samples, one per
+tritone, so `Tone.Sampler` never shifts a note more than three semitones.
+That is roughly a megabyte on the first tap of the play button, and the
+service worker caches them afterwards, so later sessions play offline.
+
+Two things follow from that. The first tap on a mobile connection takes a
+moment - the button says "Loading...". And if the samples cannot be fetched
+at all, the app falls back to a synth rather than staying silent, and says so.
+The wait is capped at ten seconds, because a stalled request never fails on
+its own and a button stuck on "loading" is worse than a synth.
 
 ## Storage can be evicted
 

@@ -267,3 +267,307 @@ footer {
   text-align: center;
   margin-top: 1.5rem;
 }
+
+/* --- Leadsheet ------------------------------------------------------- */
+
+.leadsheet { margin-top: 0.5rem; }
+
+.leadsheet-line { margin-bottom: 0.25rem; }
+
+.section-label {
+  font-size: 0.6875rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--accent);
+  margin: 0.75rem 0 0.25rem;
+}
+
+.bar-row,
+.bracket-row {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0.25rem;
+}
+
+.sheet-bar {
+  position: relative;
+  min-height: 3.25rem;
+  padding: 0.875rem 0.125rem 0.25rem;
+  background: var(--surface-raised);
+  border: 1px solid var(--line);
+  border-radius: 0.5rem;
+  color: var(--text);
+  font: inherit;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.sheet-bar:disabled { cursor: default; }
+.sheet-bar.filler { background: none; border: 0; }
+
+.sheet-bar.selected { border-color: var(--accent); }
+.sheet-bar.highlighted { border-color: var(--accent); background: #241f16; }
+.sheet-bar.playing {
+  border-color: var(--accent);
+  background: var(--accent);
+  color: #1a1408;
+}
+.sheet-bar.playing .bar-number { color: #5a4718; }
+.sheet-bar.blank .bar-chord { color: var(--accent); }
+
+.bar-number {
+  position: absolute;
+  top: 0.1875rem;
+  left: 0.3125rem;
+  font-size: 0.5625rem;
+  color: var(--text-dim);
+  font-variant-numeric: tabular-nums;
+}
+
+.bar-chords {
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+  gap: 0.25rem;
+  width: 100%;
+}
+
+.bar-chord {
+  font-size: 0.9375rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+.bar-chords.split .bar-chord { font-size: 0.75rem; }
+.bar-chords.split .bar-chord + .bar-chord { border-left: 1px solid var(--line); padding-left: 0.25rem; }
+
+.bracket-row { height: 1.125rem; margin-top: 0.125rem; }
+
+.bracket {
+  position: relative;
+  display: block;
+}
+
+.bracket::before {
+  content: '';
+  position: absolute;
+  left: 0.125rem;
+  right: 0.125rem;
+  top: 0;
+  height: 0.3125rem;
+  border: 1px solid var(--accent-dim);
+  border-top: 0;
+  border-radius: 0 0 0.25rem 0.25rem;
+}
+
+.bracket span {
+  position: absolute;
+  top: 0.375rem;
+  left: 0;
+  right: 0;
+  text-align: center;
+  font-size: 0.625rem;
+  color: var(--accent);
+  white-space: nowrap;
+}
+
+/* --- Transport and hints --------------------------------------------- */
+
+.hint {
+  position: relative;
+  background: #241f16;
+  border: 1px solid var(--accent-dim);
+  border-radius: 0.625rem;
+  color: var(--accent);
+  font-size: 0.8125rem;
+  padding: 0.625rem 2rem 0.625rem 0.75rem;
+  margin: 0.75rem 0 0;
+}
+
+.hint-close {
+  position: absolute;
+  top: 0.125rem;
+  right: 0.125rem;
+  min-width: var(--tap);
+  min-height: var(--tap);
+  background: none;
+  border: 0;
+  color: var(--accent);
+  font-size: 1.25rem;
+  cursor: pointer;
+}
+
+.transport {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.button {
+  min-height: var(--tap);
+  padding: 0.5rem 1.125rem;
+  border-radius: 0.625rem;
+  border: 1px solid var(--line);
+  background: var(--surface-raised);
+  color: var(--text);
+  font: inherit;
+  font-size: 1rem;
+  cursor: pointer;
+}
+
+.button.primary {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #1a1408;
+  font-weight: 600;
+}
+
+.button:disabled { opacity: 0.5; cursor: default; }
+
+.tempo {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  margin-top: 0.75rem;
+}
+
+.tempo input[type='range'] {
+  flex: 1;
+  accent-color: var(--accent);
+  height: var(--tap);
+}
+
+.tempo-value {
+  font-variant-numeric: tabular-nums;
+  font-size: 0.875rem;
+  color: var(--text-dim);
+  min-width: 4.5rem;
+}
+
+.unverified {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  font-size: 0.75rem;
+  color: var(--red);
+  border: 1px solid var(--red);
+  border-radius: 999px;
+  padding: 0.125rem 0.5rem;
+}
+
+.tune-notes {
+  font-size: 0.8125rem;
+  color: var(--text-dim);
+  margin: 0.75rem 0 0;
+  line-height: 1.5;
+}
+
+.back {
+  min-height: var(--tap);
+  background: none;
+  border: 0;
+  color: var(--text-dim);
+  font: inherit;
+  font-size: 0.9375rem;
+  padding: 0 0 0.5rem;
+  cursor: pointer;
+}
+
+.chip.small {
+  min-height: 2.25rem;
+  padding: 0.25rem 0.625rem;
+  font-size: 0.875rem;
+}
+
+.button.wide {
+  display: block;
+  width: 100%;
+  margin-bottom: 1rem;
+}
+
+/* --- Quiz ------------------------------------------------------------- */
+
+.question { font-size: 1.125rem; margin: 0 0 0.75rem; }
+
+.passage {
+  font-size: 1.25rem;
+  letter-spacing: 0.03em;
+  color: var(--accent);
+  margin: 0 0 0.75rem;
+}
+
+.options {
+  display: grid;
+  gap: 0.5rem;
+  margin-top: 0.875rem;
+}
+
+.option {
+  min-height: var(--tap);
+  padding: 0.625rem 0.875rem;
+  border-radius: 0.625rem;
+  border: 1px solid var(--line);
+  background: var(--surface-raised);
+  color: var(--text);
+  font: inherit;
+  font-size: 1.0625rem;
+  text-align: left;
+  cursor: pointer;
+}
+
+.option.right { border-color: var(--green); color: var(--green); }
+.option.wrong { border-color: var(--red); color: var(--red); }
+.option:disabled { cursor: default; }
+
+.verdict { margin-top: 1rem; }
+.right-text { color: var(--green); margin: 0 0 0.25rem; font-weight: 600; }
+.wrong-text { color: var(--red); margin: 0 0 0.25rem; font-weight: 600; }
+.explanation { color: var(--text-dim); font-size: 0.875rem; margin: 0 0 1rem; }
+
+/* --- Tune list -------------------------------------------------------- */
+
+.tune-item {
+  display: block;
+  width: 100%;
+  text-align: left;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 0.875rem 1rem;
+  margin-bottom: 0.625rem;
+  color: var(--text);
+  font: inherit;
+  cursor: pointer;
+}
+
+.tune-item h3 { margin: 0 0 0.125rem; font-size: 1.125rem; }
+.tune-item p { margin: 0; font-size: 0.8125rem; color: var(--text-dim); }
+
+/* --- Tab bar ---------------------------------------------------------- */
+
+.tabbar {
+  position: sticky;
+  bottom: 0;
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0.5rem;
+  padding: 0.625rem 0 calc(env(safe-area-inset-bottom) * 0.5);
+  margin-top: 1.5rem;
+  background: var(--bg);
+  border-top: 1px solid var(--line);
+}
+
+.tab {
+  min-height: var(--tap);
+  border-radius: 0.625rem;
+  border: 1px solid var(--line);
+  background: var(--surface);
+  color: var(--text-dim);
+  font: inherit;
+  cursor: pointer;
+}
+
+.tab[aria-current='page'] { color: var(--accent); border-color: var(--accent-dim); }
