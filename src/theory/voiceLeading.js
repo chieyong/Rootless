@@ -6,39 +6,69 @@
  * that paint themselves into a corner.
  */
 
-import { buildVoicing, REGISTER, VOICING_FORMS } from './voicings.js';
+import { buildVoicing, placementFor, SOLO_REGISTER, VOICING_FORMS } from './voicings.js';
 import { parseChord } from './chords.js';
 
 const OCTAVE_OFFSETS = [-1, 0, 1];
 
-/** Average pitch of a voicing. */
+/** How far outside its register a candidate may still be considered. */
+const REGISTER_SLACK = 3;
+
+/** Average pitch of a set of notes. */
 function centroid(midi) {
   return midi.reduce((a, b) => a + b, 0) / midi.length;
 }
 
-/** How far a set of notes has to move to reach another, in semitones. */
-export function voicingDistance(fromMidi, toMidi) {
-  if (!fromMidi || !fromMidi.length) return 0;
-  const nearest = (a, b) => a.reduce((sum, n) => sum + Math.min(...b.map((m) => Math.abs(m - n))), 0);
-  return (nearest(fromMidi, toMidi) + nearest(toMidi, fromMidi)) / 2;
+/** Accepts either a voicing or a bare array of MIDI numbers. */
+const midiOf = (x) => (Array.isArray(x) ? x : x?.midi ?? []);
+
+/** A voicing that puts notes in both hands. */
+function splitHands(x) {
+  const hands = Array.isArray(x) ? null : x?.hands;
+  return hands?.lh?.length && hands?.rh?.length ? hands : null;
+}
+
+/**
+ * How far a voicing has to move to reach another, in semitones.
+ *
+ * Between two split voicings only the right hands are compared. The
+ * left-hand root moves with the roots of the progression whatever the search
+ * does, so counting it would swamp the signal the search is looking for.
+ *
+ * Takes voicings, or bare MIDI arrays when there are no hands to consider.
+ */
+export function voicingDistance(from, to) {
+  const fromHands = splitHands(from);
+  const toHands = splitHands(to);
+  const a = fromHands && toHands ? fromHands.rh : midiOf(from);
+  const b = fromHands && toHands ? toHands.rh : midiOf(to);
+  if (!a || !a.length || !b.length) return 0;
+  const nearest = (x, y) => x.reduce((sum, n) => sum + Math.min(...y.map((m) => Math.abs(m - n))), 0);
+  return (nearest(a, b) + nearest(b, a)) / 2;
 }
 
 /**
  * Every placement worth considering for a chord.
  * Duplicates (the same octave chosen twice) are dropped.
  */
-export function voicingCandidates(chordOrSymbol, { forms = ['rootless-A', 'rootless-B'] } = {}) {
+export function voicingCandidates(chordOrSymbol, {
+  forms = ['rootless-A', 'rootless-B'], register = SOLO_REGISTER,
+} = {}) {
   const chord = parseChord(chordOrSymbol);
   if (!chord) return [];
   const seen = new Set();
   const candidates = [];
   for (const form of forms) {
+    // The bounds come from the form's own placement rule. Reading one form's
+    // register for every form would quietly filter out any form that lives
+    // somewhere else - the solo grip reaches to MIDI 84.
+    const placement = placementFor(form, register);
     for (const offset of OCTAVE_OFFSETS) {
-      const voicing = buildVoicing(chord, form, { octaveOffset: offset });
+      const voicing = buildVoicing(chord, form, { octaveOffset: offset, register });
       if (!voicing) continue;
       const lowest = Math.min(...voicing.midi);
       const highest = Math.max(...voicing.midi);
-      if (lowest < 40 || highest > REGISTER.rootless.ceiling + 3) continue;
+      if (lowest < placement.floor || highest > placement.ceiling + REGISTER_SLACK) continue;
       const key = `${form}:${voicing.midi.join(',')}`;
       if (seen.has(key)) continue;
       seen.add(key);
@@ -48,11 +78,18 @@ export function voicingCandidates(chordOrSymbol, { forms = ['rootless-A', 'rootl
   return candidates;
 }
 
-/** Keeps voicings from drifting to the edges of the keyboard. */
-function registerPenalty(voicing) {
-  const target = voicing.form.startsWith('shell')
-    ? REGISTER.shell.rootTarget + 6
-    : REGISTER.rootless.centroidTarget;
+/**
+ * Keeps voicings from drifting to the edges of the keyboard, measured
+ * against the form's own placement rule.
+ */
+function registerPenalty(voicing, register = SOLO_REGISTER) {
+  const placement = placementFor(voicing.form, register);
+  if (placement.kind === 'split') {
+    // Judge the hand that is free to move; the root goes where the root goes.
+    return Math.abs(centroid(voicing.hands.rh) - placement.rh.target) * 0.4;
+  }
+  // A shell voicing is placed by its root, so its centre sits a little above it.
+  const target = placement.kind === 'root' ? placement.target + 6 : placement.target;
   return Math.abs(centroid(voicing.midi) - target) * 0.4;
 }
 
@@ -63,10 +100,11 @@ function registerPenalty(voicing) {
 export function chooseVoicing(chordOrSymbol, previous = null, options = {}) {
   const candidates = voicingCandidates(chordOrSymbol, options);
   if (!candidates.length) return null;
+  const register = options.register;
   let best = null;
   for (const candidate of candidates) {
-    const movement = previous ? voicingDistance(previous.midi, candidate.midi) : 0;
-    const cost = movement + registerPenalty(candidate);
+    const movement = previous ? voicingDistance(previous, candidate) : 0;
+    const cost = movement + registerPenalty(candidate, register);
     if (!best || cost < best.cost) best = { cost, candidate, movement };
   }
   return { ...best.candidate, movement: best.movement };
@@ -77,8 +115,11 @@ export function chooseVoicing(chordOrSymbol, previous = null, options = {}) {
  * Returns one voicing per chord (null for empty slots), each carrying the
  * `movement` in semitones from the previous chord.
  */
-export function voiceLeadProgression(chordsOrSymbols, { forms = ['rootless-A', 'rootless-B'], start = null } = {}) {
-  const slots = chordsOrSymbols.map((c) => (c == null ? null : voicingCandidates(c, { forms })));
+export function voiceLeadProgression(chordsOrSymbols, {
+  forms = ['rootless-A', 'rootless-B'], start = null, register = SOLO_REGISTER,
+} = {}) {
+  const slots = chordsOrSymbols.map((c) => (
+    c == null ? null : voicingCandidates(c, { forms, register })));
 
   // Viterbi over the candidate voicings.
   let previousStates = null;
@@ -90,13 +131,13 @@ export function voiceLeadProgression(chordsOrSymbols, { forms = ['rootless-A', '
       let bestFrom = -1;
       if (previousStates) {
         previousStates.forEach((state, index) => {
-          const cost = state.cost + voicingDistance(state.candidate.midi, candidate.midi);
+          const cost = state.cost + voicingDistance(state.candidate, candidate);
           if (cost < bestCost) { bestCost = cost; bestFrom = index; }
         });
       } else {
-        bestCost = start ? voicingDistance(start.midi, candidate.midi) : 0;
+        bestCost = start ? voicingDistance(start, candidate) : 0;
       }
-      return { candidate, cost: bestCost + registerPenalty(candidate), from: bestFrom };
+      return { candidate, cost: bestCost + registerPenalty(candidate, register), from: bestFrom };
     });
     table.push(states);
     previousStates = states;
@@ -123,7 +164,7 @@ export function voiceLeadProgression(chordsOrSymbols, { forms = ['rootless-A', '
   let last = start;
   for (const voicing of result) {
     if (!voicing) continue;
-    voicing.movement = last ? voicingDistance(last.midi, voicing.midi) : 0;
+    voicing.movement = last ? voicingDistance(last, voicing) : 0;
     last = voicing;
   }
   return result;

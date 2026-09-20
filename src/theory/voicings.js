@@ -1,22 +1,66 @@
 /**
- * Voicings: shell (1-3-7 / 1-7-3) and rootless A/B (Bill Evans type).
+ * Voicings: shell (1-3-7 / 1-7-3), rootless A/B (Bill Evans type) and the
+ * two-handed solo grip, root in the left hand and a rootless shape in the
+ * right.
  *
  * Everything is built with interval arithmetic from the chord root, so the
- * notes keep their spelling and land in a sensible left-hand register
- * (roughly C3-C5, MIDI 48-72, with C4 = middle C = 60).
+ * notes keep their spelling (C4 = middle C = MIDI 60).
+ *
+ * Where a voicing sits is data, not code: a register is a map from form id
+ * to a placement rule, and every function that needs one takes it as a
+ * parameter. Today there is one register, SOLO_REGISTER, because the app is
+ * for someone playing alone. A band register can be passed in later without
+ * touching any of this.
  */
 
 import { noteName, note, simplifySpelling, toMidi } from './notes.js';
 import { rawInterval, transposeNote } from './intervals.js';
 import { DEGREE_SEMITONES, degreeInterval, parseChord } from './chords.js';
 
-/** Where the lowest note of each voicing family wants to sit. */
-export const REGISTER = {
-  /** Shell voicings are placed by their root: between E2 and F3, ideally at C3. */
-  shell: { rootLow: 40, rootHigh: 53, rootTarget: 48, floor: 36, ceiling: 74 },
-  /** Rootless voicings are placed by their centre of gravity, around Bb3. */
-  rootless: { centroidTarget: 58, floor: 45, ceiling: 81 },
+/** Placed by the root: the root lands in [low, high], ideally on target. */
+const SHELL_PLACEMENT = {
+  kind: 'root', low: 40, high: 53, target: 48, floor: 36, ceiling: 74,
 };
+
+/** Placed by the centre of gravity of the whole shape. */
+const ROOTLESS_PLACEMENT = {
+  kind: 'centroid', target: 58, floor: 45, ceiling: 81,
+};
+
+/**
+ * Placed in two parts: a root for the left hand and a rootless shape for the
+ * right, with a gap between them that is neither muddy nor hollow.
+ */
+const SOLO_SPLIT_PLACEMENT = {
+  kind: 'split',
+  lh: { low: 36, high: 52 },
+  rh: { target: 65, floor: 55, ceiling: 84 },
+  /** Semitones from the left-hand root up to the lowest right-hand note. */
+  gap: { min: 7, max: 19 },
+  floor: 36,
+  ceiling: 84,
+};
+
+/**
+ * Where each voicing form sits when you are playing on your own.
+ * Keyed by form id, so every reader can look up the rule for the form in
+ * hand instead of guessing from its name.
+ */
+export const SOLO_REGISTER = {
+  'shell-1-3-7': SHELL_PLACEMENT,
+  'shell-1-7-3': SHELL_PLACEMENT,
+  'rootless-A': ROOTLESS_PLACEMENT,
+  'rootless-B': ROOTLESS_PLACEMENT,
+  'solo-root-rootless': SOLO_SPLIT_PLACEMENT,
+};
+
+/** The register in force. Solo is the only model for now. */
+export const REGISTER = SOLO_REGISTER;
+
+/** The placement rule for a form, from the given register. */
+export function placementFor(form, register = SOLO_REGISTER) {
+  return register[form] ?? ROOTLESS_PLACEMENT;
+}
 
 function degreeLabel(degree, alter) {
   const accidental = alter === 0 ? '' : alter > 0 ? '#'.repeat(alter) : 'b'.repeat(-alter);
@@ -141,36 +185,143 @@ function place(chord, voices, { score, floor, ceiling, octaveOffset = 0 }) {
 
 const centroid = (midi) => midi.reduce((a, b) => a + b, 0) / midi.length;
 
+/**
+ * Places a split voicing: the root in the left hand, the rootless A shape in
+ * the right, chosen together.
+ *
+ * The two hands cannot be placed independently - the best right hand by
+ * centroid may leave no root octave at a playable distance - so every pair is
+ * scored and the gap rule decides which survive.
+ */
+function placeSplit(chord, placement, { octaveOffset = 0 } = {}) {
+  // The A form of a half-diminished or diminished chord carries the root on
+  // top. Here the left hand is already stating the root, so doubling it wastes
+  // the finger: the tension takes its place (11 on a m7b5, 9 on a dim7).
+  const voices = rootlessAVoices(chord)
+    .map((v) => (v.degree === 1 ? tensionVoice(chord) : v))
+    .sort((a, b) => voiceSemitones(a) - voiceSemitones(b));
+  const intervals = voices.map(voiceInterval);
+  const { lh, rh, gap } = placement;
+
+  const rightHands = [];
+  for (let octave = 0; octave <= 7; octave += 1) {
+    const root = note(chord.root.letter, chord.root.alter, octave + octaveOffset);
+    const notes = intervals.map((iv) => transposeNote(root, iv));
+    const midi = notes.map(toMidi);
+    if (Math.min(...midi) < rh.floor || Math.max(...midi) > rh.ceiling) continue;
+    rightHands.push({ notes, midi, cost: Math.abs(centroid(midi) - rh.target) });
+  }
+
+  const leftHands = [];
+  for (let octave = 0; octave <= 7; octave += 1) {
+    const root = note(chord.root.letter, chord.root.alter, octave + octaveOffset);
+    const midi = toMidi(root);
+    if (midi < lh.low || midi > lh.high) continue;
+    leftHands.push({ note: root, midi });
+  }
+
+  const middle = (gap.min + gap.max) / 2;
+  let best = null;
+  let closest = null;
+  for (const right of rightHands) {
+    for (const left of leftHands) {
+      const distance = Math.min(...right.midi) - left.midi;
+      const violation = distance < gap.min ? gap.min - distance
+        : distance > gap.max ? distance - gap.max : 0;
+      // Among legal pairs the right hand's own placement decides; the gap
+      // only breaks ties, pulled towards the middle of the allowed range.
+      const candidate = {
+        left, right, distance, violation, cost: right.cost + Math.abs(distance - middle) * 0.1,
+      };
+      if (violation === 0 && (!best || candidate.cost < best.cost)) best = candidate;
+      if (!closest || violation < closest.violation
+        || (violation === closest.violation && candidate.cost < closest.cost)) closest = candidate;
+    }
+  }
+
+  // No pair satisfies the gap: take the closest one rather than nothing. This
+  // happens only when the register leaves a pitch class no room, so the
+  // voicing stays playable even if the hands sit a little wide or close.
+  const chosen = best ?? closest;
+  if (!chosen) return null;
+
+  const lhMidi = [chosen.left.midi];
+  const rhMidi = chosen.right.midi;
+  return {
+    notes: [chosen.left.note, ...chosen.right.notes],
+    midi: [...lhMidi, ...rhMidi].sort((a, b) => a - b),
+    hands: { lh: lhMidi, rh: [...rhMidi].sort((a, b) => a - b) },
+    // The root first, then the rootless voices: the degrees read low to high.
+    voices: [voice(1, 0), ...voices],
+  };
+}
+
 const FORM_LABELS = {
   'shell-1-3-7': 'Shell 1-3-7',
   'shell-1-7-3': 'Shell 1-7-3',
   'rootless-A': 'Rootless A',
   'rootless-B': 'Rootless B',
+  'solo-root-rootless': 'Solo: root + rootless',
+};
+
+/**
+ * Which hand plays which notes, as data beside the labels.
+ * 'lh' means the whole voicing is one left-hand grip; 'split' means the form
+ * places its hands separately.
+ */
+const FORM_HANDS = {
+  'shell-1-3-7': 'lh',
+  'shell-1-7-3': 'lh',
+  'rootless-A': 'lh',
+  'rootless-B': 'lh',
+  'solo-root-rootless': 'split',
 };
 
 export const VOICING_FORMS = Object.keys(FORM_LABELS);
+
+/** True when a form puts notes in both hands. */
+export function isSplitForm(form) {
+  return FORM_HANDS[form] === 'split';
+}
 
 /**
  * Builds one voicing.
  * `form` is 'shell-1-3-7', 'shell-1-7-3', 'rootless-A' or 'rootless-B'.
  * `octaveOffset` shifts the whole voicing (used by the voice-leading search).
  */
-export function buildVoicing(chordOrSymbol, form = 'rootless-A', { octaveOffset = 0 } = {}) {
+export function buildVoicing(chordOrSymbol, form = 'rootless-A', {
+  octaveOffset = 0, register = SOLO_REGISTER,
+} = {}) {
   const chord = parseChord(chordOrSymbol);
   if (!chord) return null;
-  const voices = form === 'shell-1-3-7' ? shellVoices(chord, '1-3-7')
-    : form === 'shell-1-7-3' ? shellVoices(chord, '1-7-3')
-      : form === 'rootless-B' ? rootlessBVoices(chord)
-        : rootlessAVoices(chord);
-  const register = form.startsWith('shell') ? REGISTER.shell : REGISTER.rootless;
-  const score = form.startsWith('shell')
-    ? (midi) => (midi[0] < REGISTER.shell.rootLow || midi[0] > REGISTER.shell.rootHigh
-      ? 1000 + Math.abs(midi[0] - REGISTER.shell.rootTarget)
-      : Math.abs(midi[0] - REGISTER.shell.rootTarget))
-    : (midi) => Math.abs(centroid(midi) - REGISTER.rootless.centroidTarget);
-  const { notes, midi } = place(chord, voices, {
-    score, floor: register.floor, ceiling: register.ceiling, octaveOffset,
-  });
+  const placement = placementFor(form, register);
+
+  let voices;
+  let notes;
+  let midi;
+  let hands;
+
+  if (placement.kind === 'split') {
+    const placed = placeSplit(chord, placement, { octaveOffset });
+    if (!placed) return null;
+    ({ voices, notes, midi, hands } = placed);
+  } else {
+    voices = form === 'shell-1-3-7' ? shellVoices(chord, '1-3-7')
+      : form === 'shell-1-7-3' ? shellVoices(chord, '1-7-3')
+        : form === 'rootless-B' ? rootlessBVoices(chord)
+          : rootlessAVoices(chord);
+    const score = placement.kind === 'root'
+      ? (candidate) => (candidate[0] < placement.low || candidate[0] > placement.high
+        ? 1000 + Math.abs(candidate[0] - placement.target)
+        : Math.abs(candidate[0] - placement.target))
+      : (candidate) => Math.abs(centroid(candidate) - placement.target);
+    ({ notes, midi } = place(chord, voices, {
+      score, floor: placement.floor, ceiling: placement.ceiling, octaveOffset,
+    }));
+    // One grip, one hand. `midi` is unchanged, so nothing downstream notices.
+    hands = { lh: [...midi], rh: [] };
+  }
+
   return {
     form,
     label: FORM_LABELS[form] ?? form,
@@ -179,6 +330,7 @@ export function buildVoicing(chordOrSymbol, form = 'rootless-A', { octaveOffset 
     voices,
     notes,
     midi,
+    hands,
     degrees: voices.map((v) => v.label),
   };
 }
