@@ -74,15 +74,24 @@ and `Cm7` both count.
 
 ## The Ear module
 
-Eight levels of chord-quality training, from "same or different?" up to four
-dominants against each other. A level is a point in seven dimensions rather
-than a rung on a ladder - how many options, a fixed or a random root, with or
-without a reference tone, rolled or struck, which voicing - so a hard pair can
-be made easier by turning one knob instead of dropping a level.
+Fifteen levels in three blocks: what the chord is, how it is laid out under
+the hands, and what the chords are doing together.
+
+| block | levels | from | to |
+| --- | --- | --- | --- |
+| Quality | A1-A8 | same or different, maj7 against m7 | four dominants against each other |
+| Voicing | B1-B4 | one hand or two | all four shapes at once |
+| Progression | C1-C3 | major or minor ii-V | tritone sub and backdoor in the mix |
+
+A level is a point in seven dimensions rather than a rung on a ladder - how
+many options, a fixed or a random root, with or without a reference tone,
+rolled or struck, which voicing - so a hard pair can be made easier by turning
+one knob instead of dropping a level.
 
 | module | what it does |
 | --- | --- |
-| `ear/levels.js` | the ladder, as data |
+| `ear/levels.js` | the ladder, as data, in three blocks |
+| `ear/progressions.js` | the progressions, written in C and transposed from there |
 | `ear/generators.js` | questions, each carrying its own playback plan |
 | `content/qualityCopy.js` | what each quality sounds like, for the feedback |
 
@@ -100,8 +109,12 @@ both:
 So the early levels use the shell, where only the third and seventh are in
 question, and everything from the half-diminished onwards uses the solo grip,
 which states the root in the left hand and the colour in the right.
-`ear.test.js` fails any level whose qualities sound identical in its own
-voicing.
+
+`ear.test.js` fails any level with two options that sound alike, in whichever
+terms that level works: qualities that share a sounded pitch-class set, voicing
+forms that land on the same notes, or progressions that share a shape. That
+last one is transposition-invariant, so a ii-V-I cannot be confused with a
+tritone sub just because they were asked in different keys.
 
 ## The theory engine
 
@@ -173,7 +186,7 @@ voiceLeadProgression(['Dm7', 'G7', 'Cmaj7']).map((v) => v.form);
 
 - **Phase 1 - theory engine** (done)
 - **Phase 2 - Changes**: tunes as JSON, lead-sheet grid, playback with Tone.js, quizzes
-- **Phase 3 - Ear** (chord quality done): voicing type and progression recognition still to come
+- **Phase 3 - Ear** (done)
 - **Phase 4 - Progress**: Leitner-style spaced repetition, 5-minute rounds, JSON export/import
 
 Later, outside the current scope: microphone input for bass lines and guide

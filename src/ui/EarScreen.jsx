@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { EAR_LEVELS, getLevel } from '../ear/levels.js';
+import { EAR_BLOCKS, getLevel, levelsInBlock } from '../ear/levels.js';
 import { generateEarRound } from '../ear/generators.js';
 import { makeRng } from '../quiz/rng.js';
 import useAudio from '../audio/useAudio.js';
@@ -30,6 +30,8 @@ export default function EarScreen() {
   const played = useRef(null);
 
   const level = getLevel(levelId);
+  const [blockId, setBlockId] = useState(level.block);
+  const block = EAR_BLOCKS.find((b) => b.id === blockId) ?? EAR_BLOCKS[0];
   const settings = useMemo(() => ({
     ...(playOverride === 'level' ? {} : { play: playOverride }),
     ...(rootsOverride === 'level' ? {} : { roots: rootsOverride }),
@@ -90,9 +92,24 @@ export default function EarScreen() {
       <p className="tagline">Hear it first, name it second</p>
 
       <div className="card">
-        <h2>Level</h2>
+        <h2>What to practise</h2>
         <div className="chips" style={{ marginTop: 0 }}>
-          {EAR_LEVELS.map((item) => (
+          {EAR_BLOCKS.map((item) => (
+            <button
+              type="button"
+              className="chip"
+              key={item.id}
+              aria-pressed={item.id === blockId}
+              onClick={() => setBlockId(item.id)}
+            >
+              {item.label}
+            </button>
+          ))}
+        </div>
+
+        <span className="label" style={{ marginTop: '0.875rem' }}>{block.description}</span>
+        <div className="chips" style={{ marginTop: 0 }}>
+          {levelsInBlock(blockId).map((item) => (
             <button
               type="button"
               className="chip small"

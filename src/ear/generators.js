@@ -8,8 +8,11 @@
 
 import {
   buildVoicing, formatChord, noteName, parseChord, parseKey, preferredSpelling, simplifySpelling,
+  transposeProgression, voiceLeadProgression, voicingNoteNames,
 } from '../theory/index.js';
 import { qualityCopy } from '../content/qualityCopy.js';
+import { voicingCopy } from '../content/voicingCopy.js';
+import { getProgression, PROGRESSION_KEYS } from './progressions.js';
 import { pick, shuffle } from '../quiz/rng.js';
 
 const ROOTS = ['C', 'Db', 'D', 'Eb', 'E', 'F', 'Gb', 'G', 'Ab', 'A', 'Bb', 'B'];
@@ -17,6 +20,7 @@ const ROOTS = ['C', 'Db', 'D', 'Eb', 'E', 'F', 'Gb', 'G', 'Ab', 'A', 'Bb', 'B'];
 /** How long a rolled chord takes before the next one may start. */
 const GAP_BETWEEN_CHORDS = 1.6;
 const GAP_AFTER_REFERENCE = 0.8;
+const GAP_IN_PROGRESSION = 1.4;
 
 /** The chord symbol for a root and a canonical quality. */
 function symbolFor(root, quality) {
@@ -122,11 +126,77 @@ export function sameOrDifferentQuestion(level, rng, settings = {}) {
   };
 }
 
+
+/** "Which voicing is this?" - one chord, the options are the shapes. */
+export function identifyFormQuestion(level, rng, settings = {}) {
+  const form = pick(rng, level.forms);
+  const quality = pick(rng, level.qualities);
+  const root = chooseRoot(level, rng, settings);
+  const symbol = symbolFor(root, quality);
+
+  // Build every candidate: it gives the option labels, and it is what the
+  // distinguishability test checks.
+  const built = level.forms.map((candidate) => buildVoicing(symbol, candidate));
+  const chosen = built.find((v) => v.form === form);
+  const copy = voicingCopy(form);
+
+  return {
+    id: `${level.id}:form:${symbol}:${form}:${Math.floor(rng() * 1e6)}`,
+    levelId: level.id,
+    format: 'identify-form',
+    prompt: 'Which voicing is this?',
+    options: shuffle(rng, built.map((v) => v.label)),
+    answer: chosen.label,
+    playback: [{ midi: chosen.midi, at: 0 }],
+    play: playMode(level, settings),
+    reveal: `${symbol} as ${chosen.label}`,
+    // The voicing's own notes, with octaves: register is what the question
+    // is about, and a rootless shape does not contain the chord's root.
+    explanation: `${chosen.degrees.join(' ')} - ${voicingNoteNames(chosen, { simplify: true }).join(' ')}. ${copy ? copy.short : ''}`.trim(),
+  };
+}
+
+/** The key to transpose a progression into, matching the template's mode. */
+function targetKeyFor(template, rng, settings) {
+  if ((settings?.roots ?? 'random') === 'fixed') return template.key;
+  const root = pick(rng, PROGRESSION_KEYS);
+  return template.key.endsWith('m') ? `${root}m` : root;
+}
+
+/** "Which progression is this?" - three chords, voice-led. */
+export function identifyProgressionQuestion(level, rng, settings = {}) {
+  const template = getProgression(pick(rng, level.progressions));
+  const key = targetKeyFor(template, rng, settings);
+  const symbols = transposeProgression(template.symbols, template.key, key);
+  const voicings = voiceLeadProgression(symbols, { forms: level.forms });
+
+  const options = level.progressions.map((id) => getProgression(id).label);
+
+  return {
+    id: `${level.id}:prog:${template.id}:${key}:${Math.floor(rng() * 1e6)}`,
+    levelId: level.id,
+    format: 'identify-progression',
+    prompt: 'Which progression is this?',
+    options: shuffle(rng, options),
+    answer: template.label,
+    playback: voicings.map((voicing, index) => ({
+      midi: voicing.midi,
+      at: index * GAP_IN_PROGRESSION,
+    })),
+    play: playMode(level, settings),
+    reveal: symbols.join('  '),
+    explanation: `${symbols.join(' ')} - ${template.hear}`,
+  };
+}
+
 /** One question of whatever shape the level asks for. */
 export function generateEarQuestion(level, rng, settings = {}) {
-  return level.format === 'same-different'
-    ? sameOrDifferentQuestion(level, rng, settings)
-    : identifyQuestion(level, rng, settings);
+  switch (level.format) {
+    case 'same-different': return sameOrDifferentQuestion(level, rng, settings);
+    case 'identify-form': return identifyFormQuestion(level, rng, settings);
+    case 'identify-progression': return identifyProgressionQuestion(level, rng, settings);
+    default: return identifyQuestion(level, rng, settings);
+  }
 }
 
 /**
