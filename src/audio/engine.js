@@ -145,6 +145,30 @@ export async function playArpeggio(midi, { step = 0.14, duration = '2n', velocit
   });
 }
 
+/**
+ * Plays a short plan of chords at given offsets from now, for the ear
+ * exercises: a reference tone and then the chord, or two chords to compare.
+ *
+ * `events` are { midi, at (seconds from now), duration, plain }. `plain`
+ * keeps a single note from being rolled. Scheduled against Tone.now() rather
+ * than the Transport, so it never collides with a tune that is playing.
+ */
+export async function playEvents(events, { arpeggio = false, step = 0.14, duration = '2n' } = {}) {
+  if (!isAudioReady() || !(await ensureRunning())) return;
+  const now = Tone.now();
+  for (const event of events) {
+    const at = now + (event.at ?? 0);
+    const notes = [...event.midi].sort((a, b) => a - b);
+    if (arpeggio && !event.plain && notes.length > 1) {
+      notes.forEach((note, index) => {
+        instrument.triggerAttackRelease(toNote(note), event.duration ?? duration, at + index * step, 0.75);
+      });
+    } else {
+      instrument.triggerAttackRelease(notes.map(toNote), event.duration ?? duration, at, 0.75);
+    }
+  }
+}
+
 export function isPlaying() {
   return Boolean(part) && Tone?.getTransport().state === 'started';
 }

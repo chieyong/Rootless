@@ -552,7 +552,7 @@ footer {
   position: sticky;
   bottom: 0;
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
+  grid-template-columns: repeat(3, 1fr);
   gap: 0.5rem;
   padding: 0.625rem 0 calc(env(safe-area-inset-bottom) * 0.5);
   margin-top: 1.5rem;
@@ -690,3 +690,31 @@ footer {
 
 .swatch.lh { background: var(--key-on-low); }
 .swatch.rh { background: var(--key-on); margin-left: 0.5rem; }
+
+/* --- Ear training ------------------------------------------------------ */
+
+.hear-row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin: 0.25rem 0 0.5rem;
+}
+
+.hear-row .dim { font-size: 0.875rem; }
+
+.level-name {
+  font-size: 1.125rem;
+  font-weight: 600;
+  margin: 0.875rem 0 0.125rem;
+}
+
+.chip-score {
+  color: var(--accent);
+  font-variant-numeric: tabular-nums;
+}
+
+.reveal {
+  font-size: 1.25rem;
+  color: var(--accent);
+  margin: 0 0 0.375rem;
+}

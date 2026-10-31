@@ -72,6 +72,37 @@ The first two can be answered by multiple choice or by building the chord from
 a root and a quality. Answers are compared by sound, not spelling, so `C-7`
 and `Cm7` both count.
 
+## The Ear module
+
+Eight levels of chord-quality training, from "same or different?" up to four
+dominants against each other. A level is a point in seven dimensions rather
+than a rung on a ladder - how many options, a fixed or a random root, with or
+without a reference tone, rolled or struck, which voicing - so a hard pair can
+be made easier by turning one knob instead of dropping a level.
+
+| module | what it does |
+| --- | --- |
+| `ear/levels.js` | the ladder, as data |
+| `ear/generators.js` | questions, each carrying its own playback plan |
+| `content/qualityCopy.js` | what each quality sounds like, for the feedback |
+
+### Why the voicing matters
+
+Two facts decide which voicing a question is played with, and a test enforces
+both:
+
+- A **rootless** voicing cannot be identified at all. The rootless A form of
+  Cmaj7 is E G B D, which is an Em7 - same four notes. Without a root the
+  question has two correct answers.
+- A **shell** voicing has no fifth, so it cannot tell m7 from m7b5, dim7 from
+  m6, or 7 from 7alt.
+
+So the early levels use the shell, where only the third and seventh are in
+question, and everything from the half-diminished onwards uses the solo grip,
+which states the root in the left hand and the colour in the right.
+`ear.test.js` fails any level whose qualities sound identical in its own
+voicing.
+
 ## The theory engine
 
 Everything harmonic lives in `src/theory/` and is independent of React, audio
@@ -142,7 +173,7 @@ voiceLeadProgression(['Dm7', 'G7', 'Cmaj7']).map((v) => v.form);
 
 - **Phase 1 - theory engine** (done)
 - **Phase 2 - Changes**: tunes as JSON, lead-sheet grid, playback with Tone.js, quizzes
-- **Phase 3 - Ear**: chord quality, voicing type and progression recognition
+- **Phase 3 - Ear** (chord quality done): voicing type and progression recognition still to come
 - **Phase 4 - Progress**: Leitner-style spaced repetition, 5-minute rounds, JSON export/import
 
 Later, outside the current scope: microphone input for bass lines and guide

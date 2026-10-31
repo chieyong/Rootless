@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { TUNES, getTune } from './tunes/index.js';
+import EarScreen from './ui/EarScreen.jsx';
 import QuizScreen from './ui/QuizScreen.jsx';
 import TheoryLab from './ui/TheoryLab.jsx';
 import TuneScreen from './ui/TuneScreen.jsx';
@@ -48,6 +49,8 @@ export default function App() {
             onBack={() => setScreen({ name: 'tune', id: screen.id })}
           />
         );
+      case 'ear':
+        return <EarScreen />;
       case 'lab':
         return <TheoryLab />;
       default:
@@ -55,7 +58,7 @@ export default function App() {
     }
   })();
 
-  const tab = screen.name === 'lab' ? 'lab' : 'tunes';
+  const tab = screen.name === 'lab' || screen.name === 'ear' ? screen.name : 'tunes';
 
   return (
     <>
@@ -68,6 +71,14 @@ export default function App() {
           onClick={() => setScreen({ name: 'tunes' })}
         >
           Tunes
+        </button>
+        <button
+          type="button"
+          className="tab"
+          aria-current={tab === 'ear' ? 'page' : undefined}
+          onClick={() => setScreen({ name: 'ear' })}
+        >
+          Ear
         </button>
         <button
           type="button"

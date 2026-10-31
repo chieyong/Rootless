@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import {
-  audioState, isAudioReady, onAudioState, playArpeggio, playNotes, playSequence, setTempo,
-  startAudio, stopPlayback,
+  audioState, isAudioReady, onAudioState, playArpeggio, playEvents, playNotes, playSequence,
+  setTempo, startAudio, stopPlayback,
 } from './engine.js';
 
 /**
@@ -32,6 +32,12 @@ export default function useAudio() {
     else await playNotes(midi, { duration });
   }, [ensure]);
 
+  /** Plays a timed plan of chords: a reference tone, or two to compare. */
+  const playPlan = useCallback(async (events, { arpeggio = false } = {}) => {
+    if (!events?.length || !(await ensure())) return;
+    await playEvents(events, { arpeggio });
+  }, [ensure]);
+
   const stop = useCallback(() => {
     stopPlayback();
     setPlaying(false);
@@ -59,6 +65,7 @@ export default function useAudio() {
     playing,
     step,
     playChord,
+    playPlan,
     playProgression,
     stop,
     setTempo,
