@@ -2,6 +2,7 @@ import React, { useMemo, useState } from 'react';
 import { answersMatch, generateRound, QUESTION_TYPES } from '../quiz/generators.js';
 import { makeRng } from '../quiz/rng.js';
 import useStored from '../storage/useStored.js';
+import { recordAnswer } from '../progress/store.js';
 import ChordBuilder from './ChordBuilder.jsx';
 import LeadSheet from './LeadSheet.jsx';
 
@@ -29,8 +30,10 @@ export default function QuizScreen({ tune, onBack }) {
 
   const answer = (value) => {
     if (answered) return;
+    const right = answersMatch(value, question.answer);
     setGiven(value);
-    if (answersMatch(value, question.answer)) setScore((s) => s + 1);
+    if (right) setScore((s) => s + 1);
+    recordAnswer(question.itemKey, right);
   };
 
   const next = () => {

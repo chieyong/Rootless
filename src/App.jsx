@@ -1,10 +1,12 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { TUNES, getTune } from './tunes/index.js';
 import EarScreen from './ui/EarScreen.jsx';
+import ProgressScreen from './ui/ProgressScreen.jsx';
 import QuizScreen from './ui/QuizScreen.jsx';
 import TheoryLab from './ui/TheoryLab.jsx';
 import TuneScreen from './ui/TuneScreen.jsx';
 import { barCount } from './tunes/tune.js';
+import { load, requestPersistentStorage, save } from './storage/local.js';
 
 function TuneList({ onOpen }) {
   return (
@@ -32,6 +34,14 @@ function TuneList({ onOpen }) {
 export default function App() {
   const [screen, setScreen] = useState({ name: 'tunes' });
 
+  // Ask once to keep the data. iOS clears storage for sites left unused for
+  // about a week unless it is persisted, and progress is worth keeping.
+  useEffect(() => {
+    if (load('asked-to-persist', false)) return;
+    save('asked-to-persist', true);
+    requestPersistentStorage();
+  }, []);
+
   const body = (() => {
     switch (screen.name) {
       case 'tune':
@@ -51,6 +61,8 @@ export default function App() {
         );
       case 'ear':
         return <EarScreen />;
+      case 'progress':
+        return <ProgressScreen />;
       case 'lab':
         return <TheoryLab />;
       default:
@@ -58,7 +70,7 @@ export default function App() {
     }
   })();
 
-  const tab = screen.name === 'lab' || screen.name === 'ear' ? screen.name : 'tunes';
+  const tab = ['lab', 'ear', 'progress'].includes(screen.name) ? screen.name : 'tunes';
 
   return (
     <>
@@ -79,6 +91,14 @@ export default function App() {
           onClick={() => setScreen({ name: 'ear' })}
         >
           Ear
+        </button>
+        <button
+          type="button"
+          className="tab"
+          aria-current={tab === 'progress' ? 'page' : undefined}
+          onClick={() => setScreen({ name: 'progress' })}
+        >
+          Progress
         </button>
         <button
           type="button"

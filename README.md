@@ -116,6 +116,47 @@ forms that land on the same notes, or progressions that share a shape. That
 last one is transposition-invariant, so a ii-V-I cannot be confused with a
 tritone sub just because they were asked in different keys.
 
+## Progress
+
+Every answer, in the tune quiz and the ear exercises alike, is recorded
+against an **item**: the thing being learned, rather than the question, which
+is generated at random and never repeats. Naming bar 7 of Autumn Leaves and
+filling it into the grid are one item; hearing a m7b5 in level A5 and
+comparing it in A6 are another. Items live in a five-box Leitner system -
+right moves an item up a box and out of the way for longer, wrong drops it
+straight back to box one, whatever height it had reached.
+
+| module | what it does |
+| --- | --- |
+| `progress/leitner.js` | the boxes: grading, due dates, strength, practice order |
+| `progress/store.js` | load, save, record, export, import, all through `storage/local.js` |
+| `progress/round.js` | how long a round lasts |
+
+A round defaults to **five minutes** - the session you will actually do on a
+train - and ends on the clock, checked when you answer, so nothing counts
+down while you are still listening. Ten and twenty question rounds are there
+for when you want a fixed length.
+
+Rounds lean on what is weak or due: the answer is drawn from the half of the
+level's options that most need the work, while the options on screen stay the
+full set. Narrowing those would turn a six-way question into a three-way one
+and flatter the score.
+
+### Keeping it
+
+The Progress tab shows what is strong, due and weak per tune and per chord
+type, and exports everything as a JSON file. On iOS that lands in Files, from
+where it can go to AirDrop or a mail to yourself. Import merges by default and
+keeps whichever side was practised more recently, so restoring an old backup
+onto a phone you have since used does not throw away the newer work.
+
+An imported file is data off a disk, not something to trust: every field is
+checked and clamped on the way in, and an item cannot claim to have been
+answered correctly more often than it was asked.
+
+`navigator.storage.persist()` is requested once at first start. Without it iOS
+clears site data after about a week of not opening the app.
+
 ## The theory engine
 
 Everything harmonic lives in `src/theory/` and is independent of React, audio
@@ -187,7 +228,7 @@ voiceLeadProgression(['Dm7', 'G7', 'Cmaj7']).map((v) => v.form);
 - **Phase 1 - theory engine** (done)
 - **Phase 2 - Changes**: tunes as JSON, lead-sheet grid, playback with Tone.js, quizzes
 - **Phase 3 - Ear** (done)
-- **Phase 4 - Progress**: Leitner-style spaced repetition, 5-minute rounds, JSON export/import
+- **Phase 4 - Progress** (done)
 
 Later, outside the current scope: microphone input for bass lines and guide
 tone lines, and MIDI input on the MacBook. Input (buttons, microphone, MIDI)

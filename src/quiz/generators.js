@@ -7,6 +7,10 @@
  *
  * Every question looks the same:
  *   { id, type, prompt, options, answer, explanation, highlightBars, showSheet }
+ *
+ * `itemKey` names what is being learned - a bar of a tune, a modulation -
+ * as opposed to the question's id, which is random and never repeats. It is
+ * what spaced repetition counts against.
  */
 
 import {
@@ -83,6 +87,8 @@ export function chordAtBarQuestion(tune, rng, { showSheet = false } = {}) {
     id: `${showSheet ? 'fill-blank' : 'chord-at-bar'}:${tune.id}:${bar.barNumber}`,
     type: showSheet ? 'fill-blank' : 'chord-at-bar',
     tuneId: tune.id,
+    // Naming a bar and filling it in are the same thing to remember.
+    itemKey: `tune:${tune.id}:bar:${bar.barNumber}`,
     prompt: showSheet
       ? `Which chord belongs in the empty bar?`
       : `What is bar ${bar.barNumber} of ${tune.title}?`,
@@ -123,6 +129,7 @@ export function transposeQuestion(tune, rng) {
     id: `transpose:${tune.id}:${start}:${targetName}`,
     type: 'transpose',
     tuneId: tune.id,
+    itemKey: `tune:${tune.id}:transpose`,
     prompt: `Transpose bars ${passage[0].barNumber}-${passage.at(-1).barNumber} to ${keyName(target)}.`,
     passage: symbols.join(' '),
     barNumber: passage[0].barNumber,
@@ -153,6 +160,7 @@ export function modulationQuestion(tune, rng) {
     id: `modulation:${tune.id}:${modulation.fromBar}`,
     type: 'modulation',
     tuneId: tune.id,
+    itemKey: `tune:${tune.id}:modulation:${modulation.fromBar}`,
     prompt: `Bars ${modulation.fromBar}-${modulation.toBar} of ${tune.title} lead to which key?`,
     barNumber: modulation.fromBar,
     highlightBars: [modulation.fromBar, modulation.toBar],

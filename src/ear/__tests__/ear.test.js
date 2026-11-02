@@ -3,7 +3,7 @@ import { EAR_BLOCKS, EAR_LEVELS, getLevel, levelsInBlock, usedQualities } from '
 import { getProgression, PROGRESSION_KEYS, PROGRESSIONS } from '../progressions.js';
 import {
   generateEarQuestion, generateEarRound, identifyFormQuestion, identifyProgressionQuestion,
-  identifyQuestion, sameOrDifferentQuestion,
+  identifyQuestion, levelOptions, sameOrDifferentQuestion,
 } from '../generators.js';
 import { makeRng } from '../../quiz/rng.js';
 import { qualityCopy } from '../../content/qualityCopy.js';
@@ -302,5 +302,76 @@ describe('transposing a progression', () => {
       }
     }
     expect(PROGRESSION_KEYS).not.toContain('Gb');
+  });
+});
+
+describe('item keys', () => {
+  it('names what is being learned, not the question', () => {
+    for (const level of EAR_LEVELS) {
+      for (let seed = 1; seed <= 10; seed += 1) {
+        const question = generateEarQuestion(level, makeRng(seed));
+        expect(question.itemKey, `${level.id} has no item key`).toBeTruthy();
+        expect(question.itemKey).toMatch(/^ear:(quality|form|progression):/);
+        expect(question.itemKey, 'must not carry the random id').not.toContain(question.id);
+      }
+    }
+  });
+
+  it('is stable across keys and rounds', () => {
+    // The same quality in a different key is the same thing to remember.
+    const keys = new Set();
+    for (let seed = 1; seed <= 40; seed += 1) {
+      const question = identifyQuestion({ ...getLevel('A4'), qualities: ['m7'] }, makeRng(seed));
+      keys.add(question.itemKey);
+    }
+    expect(keys).toEqual(new Set(['ear:quality:m7']));
+  });
+
+  it('counts naming a quality and comparing it as the same item', () => {
+    const named = identifyQuestion({ ...getLevel('A5'), qualities: ['m7b5'] }, makeRng(1));
+    const compared = sameOrDifferentQuestion({ ...getLevel('A6'), qualities: ['m7b5'] }, makeRng(1));
+    expect(named.itemKey).toBe(compared.itemKey);
+  });
+});
+
+describe('focus', () => {
+  it('draws the answer from the focus but still offers every option', () => {
+    const level = { ...getLevel('A7'), focus: ['m7b5'] };
+    for (let seed = 1; seed <= 20; seed += 1) {
+      const question = identifyQuestion(level, makeRng(seed));
+      expect(question.itemKey).toBe('ear:quality:m7b5');
+      expect(question.options, 'narrowing the options would flatter the score')
+        .toHaveLength(getLevel('A7').qualities.length);
+    }
+  });
+
+  it('ignores a focus the level cannot ask about', () => {
+    // A stale focus must never produce a question with no valid answer.
+    const level = { ...getLevel('A3'), focus: ['dim7', 'm6'] };
+    for (let seed = 1; seed <= 20; seed += 1) {
+      const question = identifyQuestion(level, makeRng(seed));
+      expect(getLevel('A3').qualities.map((q) => qualityCopy(q).label))
+        .toContain(question.answer);
+    }
+  });
+
+  it('focuses forms and progressions too', () => {
+    const forms = identifyFormQuestion({ ...getLevel('B4'), focus: ['rootless-B'] }, makeRng(2));
+    expect(forms.itemKey).toBe('ear:form:rootless-B');
+    expect(forms.options).toHaveLength(4);
+
+    const prog = identifyProgressionQuestion({ ...getLevel('C3'), focus: ['backdoor'] }, makeRng(2));
+    expect(prog.itemKey).toBe('ear:progression:backdoor');
+    expect(prog.options).toHaveLength(4);
+  });
+
+  it('lists every option of a level with its item key', () => {
+    for (const level of EAR_LEVELS) {
+      const options = levelOptions(level);
+      expect(options.length).toBeGreaterThanOrEqual(2);
+      for (const { option, key } of options) {
+        expect(key).toContain(option);
+      }
+    }
   });
 });

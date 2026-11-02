@@ -1,13 +1,16 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { EAR_BLOCKS, getLevel, levelsInBlock } from '../ear/levels.js';
-import { generateEarRound } from '../ear/generators.js';
+import { generateEarRound, levelOptions } from '../ear/generators.js';
 import { makeRng } from '../quiz/rng.js';
 import useAudio from '../audio/useAudio.js';
 import useStored from '../storage/useStored.js';
+import { dueKeys, recordAnswer } from '../progress/store.js';
+import {
+  DEFAULT_ROUND, getRoundMode, questionsToPrepare, roundIsOver, roundProgress, roundRemaining,
+  ROUND_MODES,
+} from '../progress/round.js';
 import AudioHint from './AudioHint.jsx';
 import PlayButton from './PlayButton.jsx';
-
-const ROUND_LENGTH = 10;
 
 /**
  * Ear training: hear a chord, name what it is.
@@ -23,11 +26,14 @@ export default function EarScreen() {
   const [playOverride, setPlayOverride] = useStored('ear:play', 'level');
   const [rootsOverride, setRootsOverride] = useStored('ear:roots', 'level');
 
+  const [roundId, setRoundId] = useStored('round:mode', DEFAULT_ROUND);
   const [seed, setSeed] = useState(() => Math.floor(Math.random() * 1e9));
+  const [startedAt, setStartedAt] = useState(() => Date.now());
   const [index, setIndex] = useState(0);
   const [given, setGiven] = useState(null);
   const [score, setScore] = useState(0);
   const played = useRef(null);
+  const mode = getRoundMode(roundId);
 
   const level = getLevel(levelId);
   const [blockId, setBlockId] = useState(level.block);
@@ -37,13 +43,26 @@ export default function EarScreen() {
     ...(rootsOverride === 'level' ? {} : { roots: rootsOverride }),
   }), [playOverride, rootsOverride]);
 
+  // Lean the round on what is weak or due, while still offering every option.
+  const focused = useMemo(() => {
+    const options = levelOptions(level);
+    const order = dueKeys(options.map((o) => o.key));
+    const half = Math.max(2, Math.ceil(options.length / 2));
+    const wanted = new Set(order.slice(0, half));
+    return { ...level, focus: options.filter((o) => wanted.has(o.key)).map((o) => o.option) };
+    // Recomputed per round, not per question, so a round keeps its shape.
+  }, [level, seed]);
+
   const round = useMemo(
-    () => generateEarRound(level, makeRng(seed), { count: ROUND_LENGTH, settings }),
-    [level, seed, settings],
+    () => generateEarRound(focused, makeRng(seed), {
+      count: questionsToPrepare(mode), settings,
+    }),
+    [focused, seed, settings, mode],
   );
 
   const question = round[index];
-  const done = index >= round.length;
+  const done = index >= round.length
+    || roundIsOver(mode, { answered: index, startedAt, now: Date.now() });
   const answered = given !== null;
 
   const hear = () => question && audio.playPlan(question.playback, {
@@ -61,8 +80,10 @@ export default function EarScreen() {
 
   const answer = (option) => {
     if (answered || !question) return;
+    const right = option === question.answer;
     setGiven(option);
-    if (option === question.answer) setScore((s) => s + 1);
+    if (right) setScore((s) => s + 1);
+    recordAnswer(question.itemKey, right);
   };
 
   const next = () => {
@@ -73,17 +94,20 @@ export default function EarScreen() {
   const restart = (nextLevelId = levelId) => {
     if (nextLevelId !== levelId) setLevelId(nextLevelId);
     setSeed(Math.floor(Math.random() * 1e9));
+    setStartedAt(Date.now());
     setIndex(0);
     setGiven(null);
     setScore(0);
     played.current = null;
   };
 
-  // Remember the best score per level.
+  // Remember the best accuracy per level, as a percentage: rounds are no
+  // longer all the same length, so a raw score cannot be compared.
   useEffect(() => {
-    if (!done) return;
-    setBest((current) => (score > (current[levelId] ?? -1)
-      ? { ...current, [levelId]: score } : current));
+    if (!done || index === 0) return;
+    const pct = Math.round((score / index) * 100);
+    setBest((current) => (pct > (current[levelId] ?? -1)
+      ? { ...current, [levelId]: pct } : current));
   }, [done]);
 
   return (
@@ -119,13 +143,28 @@ export default function EarScreen() {
             >
               {item.id}
               {best[item.id] !== undefined && (
-                <span className="chip-score"> {best[item.id]}/{ROUND_LENGTH}</span>
+                <span className="chip-score"> {best[item.id]}%</span>
               )}
             </button>
           ))}
         </div>
         <p className="level-name">{level.label}</p>
         <p className="voicing-guidance">{level.description}</p>
+
+        <span className="label" style={{ marginTop: '0.875rem' }}>Round</span>
+        <div className="chips" style={{ marginTop: 0 }}>
+          {ROUND_MODES.map((item) => (
+            <button
+              type="button"
+              className="chip small"
+              key={item.id}
+              aria-pressed={item.id === roundId}
+              onClick={() => { setRoundId(item.id); restart(); }}
+            >
+              {item.label}
+            </button>
+          ))}
+        </div>
 
         <span className="label" style={{ marginTop: '0.875rem' }}>How it sounds</span>
         <div className="chips" style={{ marginTop: 0 }}>
@@ -167,7 +206,7 @@ export default function EarScreen() {
       {done ? (
         <div className="card">
           <h2>Round done</h2>
-          <p className="question">{score} of {round.length} right.</p>
+          <p className="question">{score} of {index} right.</p>
           <button type="button" className="button primary wide" onClick={() => restart()}>
             Another round
           </button>
@@ -175,8 +214,17 @@ export default function EarScreen() {
       ) : (
         <div className="card">
           <p className="tagline" style={{ margin: 0 }}>
-            Question {index + 1} of {round.length} &middot; {score} right so far
+            {roundRemaining(mode, { answered: index, startedAt })} &middot; {score} right so far
           </p>
+          <div
+            className="round-bar"
+            role="progressbar"
+            aria-valuenow={Math.round(roundProgress(mode, { answered: index, startedAt }) * 100)}
+            aria-valuemin={0}
+            aria-valuemax={100}
+          >
+            <span style={{ width: `${roundProgress(mode, { answered: index, startedAt }) * 100}%` }} />
+          </div>
           <p className="question">{question.prompt}</p>
 
           <div className="hear-row">
@@ -217,7 +265,7 @@ export default function EarScreen() {
               <p className="reveal readout">{question.reveal}</p>
               <p className="explanation">{question.explanation}</p>
               <button type="button" className="button primary wide" onClick={next}>
-                {index === round.length - 1 ? 'Finish' : 'Next'}
+                Next
               </button>
             </div>
           )}

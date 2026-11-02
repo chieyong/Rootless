@@ -279,6 +279,11 @@ const FORM_HANDS = {
 
 export const VOICING_FORMS = Object.keys(FORM_LABELS);
 
+/** The display name of a form: 'shell-1-7-3' -> 'Shell 1-7-3'. */
+export function formLabel(form) {
+  return FORM_LABELS[form] ?? form;
+}
+
 /** True when a form puts notes in both hands. */
 export function isSplitForm(form) {
   return FORM_HANDS[form] === 'split';

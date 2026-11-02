@@ -127,3 +127,27 @@ describe('generateRound', () => {
     round.forEach(expectWellFormed);
   });
 });
+
+describe('item keys', () => {
+  it('names the bar, not the question', () => {
+    for (let seed = 1; seed <= 20; seed += 1) {
+      const question = chordAtBarQuestion(autumnLeaves, makeRng(seed));
+      expect(question.itemKey).toBe(`tune:autumn-leaves:bar:${question.barNumber}`);
+    }
+  });
+
+  it('counts naming a bar and filling it in as the same item', () => {
+    const named = chordAtBarQuestion(autumnLeaves, makeRng(3), { showSheet: false });
+    const filled = chordAtBarQuestion(autumnLeaves, makeRng(3), { showSheet: true });
+    expect(named.itemKey).toBe(filled.itemKey);
+  });
+
+  it('gives every question type an item key', () => {
+    for (const type of QUESTION_TYPES) {
+      for (let seed = 1; seed <= 10; seed += 1) {
+        const question = generateQuestion(autumnLeaves, makeRng(seed), { types: [type] });
+        expect(question.itemKey, type).toMatch(/^tune:autumn-leaves:/);
+      }
+    }
+  });
+});

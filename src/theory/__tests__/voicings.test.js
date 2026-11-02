@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
-  buildVoicing, isSplitForm, placementFor, SOLO_REGISTER, voicingNoteNames, voicingsFor,
-  VOICING_FORMS,
+  buildVoicing, formLabel, isSplitForm, placementFor, SOLO_REGISTER, voicingNoteNames,
+  voicingsFor, VOICING_FORMS,
 } from '../voicings.js';
 import { pitchClass } from '../notes.js';
 import { chooseVoicing, voiceLeadProgression, voicingDistance } from '../voiceLeading.js';
@@ -228,5 +228,19 @@ describe('placements that must not move', () => {
   it('still alternates the forms through a ii-V-I', () => {
     expect(voiceLeadProgression(['Dm7', 'G7', 'Cmaj7']).map((v) => v.midi))
       .toEqual([[53, 57, 60, 64], [53, 57, 59, 64], [52, 55, 59, 62]]);
+  });
+});
+
+describe('form labels', () => {
+  it('names every form', () => {
+    for (const form of VOICING_FORMS) {
+      expect(formLabel(form)).toBeTruthy();
+      expect(formLabel(form)).not.toBe(form);
+      expect(formLabel(form)).toBe(buildVoicing('Cmaj7', form).label);
+    }
+  });
+
+  it('falls back to the id it was given', () => {
+    expect(formLabel('not-a-form')).toBe('not-a-form');
   });
 });
