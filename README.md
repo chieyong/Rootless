@@ -95,6 +95,18 @@ one knob instead of dropping a level.
 | `ear/generators.js` | questions, each carrying its own playback plan |
 | `content/qualityCopy.js` | what each quality sounds like, for the feedback |
 
+### Hearing the answers back
+
+After an answer, right or wrong, every candidate can be played: all six
+qualities on the same root, all four voicings of the same chord, all four
+progressions on the same tonic. Hearing them one after another is where a
+wrong answer teaches you something, so the comparison is built into the
+question rather than left to the screen - and the candidates deliberately
+share a root, so the only thing that differs is the thing being asked about.
+
+Same-or-different offers the two chords again instead, since "Same" cannot
+be played.
+
 ### Why the voicing matters
 
 Two facts decide which voicing a question is played with, and a test enforces

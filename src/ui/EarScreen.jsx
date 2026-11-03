@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { EAR_BLOCKS, getLevel, levelsInBlock } from '../ear/levels.js';
-import { generateEarRound, levelOptions } from '../ear/generators.js';
+import { concatPlayback, generateEarRound, levelOptions } from '../ear/generators.js';
 import { makeRng } from '../quiz/rng.js';
 import useAudio from '../audio/useAudio.js';
 import useStored from '../storage/useStored.js';
@@ -65,9 +65,14 @@ export default function EarScreen() {
     || roundIsOver(mode, { answered: index, startedAt, now: Date.now() });
   const answered = given !== null;
 
-  const hear = () => question && audio.playPlan(question.playback, {
+  /** Sounds a plan: the question itself by default, or any one candidate. */
+  const hear = (plan) => question && audio.playPlan(plan ?? question.playback, {
     arpeggio: question.play === 'arpeggio',
   });
+
+  /** Every candidate in a row, so they can be compared directly. */
+  const hearAll = () => question
+    && hear(concatPlayback(question.compare.map((item) => item.playback)));
 
   // Sound each new question once the engine is up. The very first one waits
   // for a tap, because iOS will not start audio without one.
@@ -228,7 +233,7 @@ export default function EarScreen() {
           <p className="question">{question.prompt}</p>
 
           <div className="hear-row">
-            <PlayButton onClick={hear} size="large" label="Play the chord again" />
+            <PlayButton onClick={() => hear()} size="large" label="Play the chord again" />
             <span className="dim">
               {audio.ready ? 'Play again' : 'Tap to start the sound'}
             </span>
@@ -264,6 +269,36 @@ export default function EarScreen() {
               </p>
               <p className="reveal readout">{question.reveal}</p>
               <p className="explanation">{question.explanation}</p>
+
+              <div className="compare">
+                <div className="compare-head">
+                  <span className="label" style={{ margin: 0 }}>
+                    {question.format === 'same-different' ? 'Hear them again' : 'Hear them all'}
+                  </span>
+                  <button type="button" className="chip small" onClick={hearAll}>
+                    Play all
+                  </button>
+                </div>
+                {question.compare.map((item) => (
+                  <button
+                    type="button"
+                    className={`compare-item${item.isAnswer ? ' is-answer' : ''}`}
+                    key={item.id}
+                    onClick={() => hear(item.playback)}
+                  >
+                    {/* A glyph, not a nested button: the whole row is the
+                        tap target, which is easier to hit on a phone. */}
+                    <span className="play-glyph" aria-hidden="true">
+                      <svg viewBox="0 0 24 24" focusable="false">
+                        <path d="M9 6.5 18 12l-9 5.5z" fill="currentColor" />
+                      </svg>
+                    </span>
+                    <span className="compare-label">{item.label}</span>
+                    <span className="compare-detail readout">{item.detail}</span>
+                  </button>
+                ))}
+              </div>
+
               <button type="button" className="button primary wide" onClick={next}>
                 Next
               </button>

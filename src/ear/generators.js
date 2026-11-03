@@ -14,6 +14,11 @@
  * from, so a round can lean on what is weak or due. The options on screen
  * stay the level's full set - narrowing those would make a six-way question
  * a three-way one and flatter the score.
+ *
+ * Every question also carries `compare`: a playback plan for each option, on
+ * the same root and in the same voicing as the question itself. Hearing the
+ * four candidates one after another is how a wrong answer teaches you
+ * something, so they are built up front rather than left to the screen.
  */
 
 import {
@@ -31,6 +36,28 @@ const ROOTS = ['C', 'Db', 'D', 'Eb', 'E', 'F', 'Gb', 'G', 'Ab', 'A', 'Bb', 'B'];
 const GAP_BETWEEN_CHORDS = 1.6;
 const GAP_AFTER_REFERENCE = 0.8;
 const GAP_IN_PROGRESSION = 1.4;
+
+/** How long the last chord of one plan rings before the next plan starts. */
+const TAIL = 1.1;
+const GAP_BETWEEN_PLANS = 0.5;
+
+/**
+ * Strings several playback plans together into one.
+ * Each plan keeps its internal timing; the next starts after the previous
+ * one has had time to sound, so a three-chord progression gets its three
+ * chords before the next candidate begins.
+ */
+export function concatPlayback(plans, { gap = GAP_BETWEEN_PLANS } = {}) {
+  const events = [];
+  let offset = 0;
+  for (const plan of plans) {
+    if (!plan?.length) continue;
+    const span = Math.max(...plan.map((event) => event.at ?? 0));
+    events.push(...plan.map((event) => ({ ...event, at: (event.at ?? 0) + offset })));
+    offset += span + TAIL + gap;
+  }
+  return events;
+}
 
 /**
  * The pool an answer is drawn from: the level's focus when it has one,
@@ -109,6 +136,16 @@ export function identifyQuestion(level, rng, settings = {}) {
   }
   playback.push({ midi: voicing.midi, at: reference ? GAP_AFTER_REFERENCE : 0 });
 
+  // Every candidate on the same root, so the only difference you hear is the
+  // quality. No reference tone here: it would treble the length.
+  const compare = level.qualities.map((candidate) => ({
+    id: candidate,
+    label: qualityCopy(candidate)?.label ?? candidate,
+    detail: formatChord(parseChord(symbolFor(root, candidate))),
+    isAnswer: candidate === quality,
+    playback: [{ midi: voicingFor(root, candidate, level.form).midi, at: 0 }],
+  }));
+
   return {
     id: `${level.id}:identify:${root}${quality}:${Math.floor(rng() * 1e6)}`,
     levelId: level.id,
@@ -121,6 +158,7 @@ export function identifyQuestion(level, rng, settings = {}) {
     answer: qualityCopy(quality)?.label ?? quality,
     quality,
     playback,
+    compare,
     play: playMode(level, settings),
     reveal: formatChord(parseChord(symbolFor(root, quality))),
     explanation: describe(root, quality),
@@ -156,6 +194,24 @@ export function sameOrDifferentQuestion(level, rng, settings = {}) {
       { midi: voicingA.midi, at: 0 },
       { midi: voicingB.midi, at: GAP_BETWEEN_CHORDS },
     ],
+    // Not the options - "Same" and "Different" cannot be played. What helps
+    // is hearing each chord again on its own.
+    compare: [
+      {
+        id: 'first',
+        label: 'First',
+        detail: formatChord(parseChord(symbolFor(rootA, first))),
+        isAnswer: false,
+        playback: [{ midi: voicingA.midi, at: 0 }],
+      },
+      {
+        id: 'second',
+        label: 'Second',
+        detail: formatChord(parseChord(symbolFor(rootB, second))),
+        isAnswer: false,
+        playback: [{ midi: voicingB.midi, at: 0 }],
+      },
+    ],
     play: playMode(level, settings),
     reveal: `${formatChord(parseChord(symbolFor(rootA, first)))} then ${formatChord(parseChord(symbolFor(rootB, second)))}`,
     explanation: same
@@ -187,6 +243,13 @@ export function identifyFormQuestion(level, rng, settings = {}) {
     options: shuffle(rng, built.map((v) => v.label)),
     answer: chosen.label,
     playback: [{ midi: chosen.midi, at: 0 }],
+    compare: built.map((candidate) => ({
+      id: candidate.form,
+      label: candidate.label,
+      detail: voicingNoteNames(candidate, { simplify: true }).join(' '),
+      isAnswer: candidate.form === form,
+      playback: [{ midi: candidate.midi, at: 0 }],
+    })),
     play: playMode(level, settings),
     reveal: `${symbol} as ${chosen.label}`,
     // The voicing's own notes, with octaves: register is what the question
@@ -211,6 +274,26 @@ export function identifyProgressionQuestion(level, rng, settings = {}) {
 
   const options = level.progressions.map((id) => getProgression(id).label);
 
+  // Every candidate on the same tonic, major or minor as that progression
+  // needs, so what differs is the progression and not the key.
+  const tonic = key.replace(/m$/, '');
+  const compare = level.progressions.map((id) => {
+    const candidate = getProgression(id);
+    const candidateKey = candidate.key.endsWith('m') ? `${tonic}m` : tonic;
+    const candidateSymbols = transposeProgression(candidate.symbols, candidate.key, candidateKey);
+    const candidateVoicings = voiceLeadProgression(candidateSymbols, { forms: level.forms });
+    return {
+      id,
+      label: candidate.label,
+      detail: candidateSymbols.join(' '),
+      isAnswer: id === template.id,
+      playback: candidateVoicings.map((voicing, index) => ({
+        midi: voicing.midi,
+        at: index * GAP_IN_PROGRESSION,
+      })),
+    };
+  });
+
   return {
     id: `${level.id}:prog:${template.id}:${key}:${Math.floor(rng() * 1e6)}`,
     levelId: level.id,
@@ -223,6 +306,7 @@ export function identifyProgressionQuestion(level, rng, settings = {}) {
       midi: voicing.midi,
       at: index * GAP_IN_PROGRESSION,
     })),
+    compare,
     play: playMode(level, settings),
     reveal: symbols.join('  '),
     explanation: `${symbols.join(' ')} - ${template.hear}`,

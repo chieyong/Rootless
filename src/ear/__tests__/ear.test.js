@@ -2,8 +2,8 @@ import { describe, expect, it } from 'vitest';
 import { EAR_BLOCKS, EAR_LEVELS, getLevel, levelsInBlock, usedQualities } from '../levels.js';
 import { getProgression, PROGRESSION_KEYS, PROGRESSIONS } from '../progressions.js';
 import {
-  generateEarQuestion, generateEarRound, identifyFormQuestion, identifyProgressionQuestion,
-  identifyQuestion, levelOptions, sameOrDifferentQuestion,
+  concatPlayback, generateEarQuestion, generateEarRound, identifyFormQuestion,
+  identifyProgressionQuestion, identifyQuestion, levelOptions, sameOrDifferentQuestion,
 } from '../generators.js';
 import { makeRng } from '../../quiz/rng.js';
 import { qualityCopy } from '../../content/qualityCopy.js';
@@ -373,5 +373,94 @@ describe('focus', () => {
         expect(key).toContain(option);
       }
     }
+  });
+});
+
+describe('playing the answers back', () => {
+  it('offers every option of every level', () => {
+    for (const level of EAR_LEVELS) {
+      for (let seed = 1; seed <= 10; seed += 1) {
+        const question = generateEarQuestion(level, makeRng(seed));
+        expect(question.compare, `${level.id} has nothing to compare`).toBeTruthy();
+        // Same-or-different offers the two chords instead of its two options,
+        // because "Same" cannot be played.
+        const expected = level.format === 'same-different' ? 2 : question.options.length;
+        expect(question.compare, level.id).toHaveLength(expected);
+        for (const item of question.compare) {
+          expect(item.label.length).toBeGreaterThan(0);
+          expect(item.detail.length).toBeGreaterThan(0);
+          expect(item.playback.length).toBeGreaterThan(0);
+          for (const event of item.playback) expect(event.midi.length).toBeGreaterThan(0);
+        }
+      }
+    }
+  });
+
+  it('marks exactly one candidate as the answer', () => {
+    for (const level of EAR_LEVELS.filter((l) => l.format !== 'same-different')) {
+      for (let seed = 1; seed <= 10; seed += 1) {
+        const question = generateEarQuestion(level, makeRng(seed));
+        expect(question.compare.filter((item) => item.isAnswer), level.id).toHaveLength(1);
+      }
+    }
+  });
+
+  it('compares qualities on one root, so only the quality differs', () => {
+    for (let seed = 1; seed <= 20; seed += 1) {
+      const question = identifyQuestion(getLevel('A7'), makeRng(seed));
+      const roots = question.compare.map((item) => parseChord(item.detail).root.letter);
+      expect(new Set(roots).size, question.compare.map((c) => c.detail).join(' ')).toBe(1);
+    }
+  });
+
+  it('compares voicings of one and the same chord', () => {
+    for (let seed = 1; seed <= 20; seed += 1) {
+      const question = identifyFormQuestion(getLevel('B4'), makeRng(seed));
+      expect(question.compare.map((item) => item.id).sort())
+        .toEqual([...getLevel('B4').forms].sort());
+      // Different shapes of one chord, so no two candidates sound the same.
+      const sounds = question.compare.map((item) => item.playback[0].midi.join(','));
+      expect(new Set(sounds).size).toBe(sounds.length);
+    }
+  });
+
+  it('compares progressions on one tonic, so only the progression differs', () => {
+    for (let seed = 1; seed <= 20; seed += 1) {
+      const question = identifyProgressionQuestion(getLevel('C3'), makeRng(seed));
+      const tonics = question.compare.map((item) => {
+        const last = item.detail.split(' ').at(-1);
+        return parseChord(last).root.letter + (parseChord(last).root.alter || '');
+      });
+      expect(new Set(tonics).size, question.compare.map((c) => c.detail).join(' | ')).toBe(1);
+    }
+  });
+});
+
+describe('concatPlayback', () => {
+  it('strings plans together without losing an event', () => {
+    const joined = concatPlayback([
+      [{ midi: [60], at: 0 }],
+      [{ midi: [62], at: 0 }, { midi: [64], at: 1.4 }],
+      [{ midi: [65], at: 0 }],
+    ]);
+    expect(joined).toHaveLength(4);
+    expect(joined.map((e) => e.midi[0])).toEqual([60, 62, 64, 65]);
+  });
+
+  it('never lets one plan start before the last is done', () => {
+    const plans = [
+      [{ midi: [60], at: 0 }, { midi: [62], at: 2.8 }],
+      [{ midi: [64], at: 0 }],
+    ];
+    const joined = concatPlayback(plans);
+    expect(joined.at(-1).at).toBeGreaterThan(2.8);
+    for (let i = 1; i < joined.length; i += 1) {
+      expect(joined[i].at).toBeGreaterThan(joined[i - 1].at);
+    }
+  });
+
+  it('copes with nothing to play', () => {
+    expect(concatPlayback([])).toEqual([]);
+    expect(concatPlayback([[], [{ midi: [60], at: 0 }]])).toHaveLength(1);
   });
 });
