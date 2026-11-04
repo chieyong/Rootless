@@ -1,0 +1,37 @@
+{
+  "id": "body-and-soul",
+  "title": "Body And Soul",
+  "composer": "Johnny Green",
+  "key": "Db",
+  "tonality": "Db major, with a bridge that starts in D",
+  "timeSignature": "4/4",
+  "form": ["A", "A", "B", "A2"],
+  "verified": false,
+  "notes": "AABA, 32 bars, and the one to check most carefully of the lot - no two charts agree on it. The bridge especially: it is written here as D major for four bars and then a chain of descending ii-Vs (Dm7 G7, Cm7 F7, Bbm7 Eb7, Ebm7 Ab7) back to Db. Many charts take a different route home, often through | Dbm7 Gb7 | or | Emaj7 |, and some write bars 17-20 as | D7 | G7 | Gmaj7 | ... Bar 3 | Dbmaj7 Gbm7 | is also written | Dbmaj7 Gb7 | or as a whole bar of Dbmaj7.",
+  "sections": [
+    {
+      "id": "A",
+      "label": "A",
+      "bars": [
+        ["Ebm7", "Bb7"], ["Ebm7", "Ab7"], ["Dbmaj7", "Gbm7"], ["Fm7", "Bb7"],
+        ["Ebm7", "Ab7"], "Dbmaj7", ["Ebm7", "Ab7"], "Dbmaj7"
+      ]
+    },
+    {
+      "id": "B",
+      "label": "B",
+      "bars": [
+        "Dmaj7", ["Em7", "A7"], "Dmaj7", ["Dm7", "G7"],
+        "Cmaj7", ["Cm7", "F7"], ["Bbm7", "Eb7"], ["Ebm7", "Ab7"]
+      ]
+    },
+    {
+      "id": "A2",
+      "label": "A",
+      "bars": [
+        ["Ebm7", "Bb7"], ["Ebm7", "Ab7"], ["Dbmaj7", "Gbm7"], ["Fm7", "Bb7"],
+        ["Ebm7", "Ab7"], "Dbmaj7", ["Ebm7", "Ab7"], "Dbmaj7"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,37 @@
+{
+  "id": "take-the-a-train",
+  "title": "Take The A Train",
+  "composer": "Billy Strayhorn",
+  "key": "C",
+  "tonality": "C major, with a bridge in F",
+  "timeSignature": "4/4",
+  "form": ["A", "A", "B", "A2"],
+  "verified": false,
+  "notes": "AABA, 32 bars. The D7#11 in bars 3-4 is the sound of the tune: a II7 with a raised eleventh, not a dominant resolving to G. Some charts write it D9#11 or simply D7. Bar 23 is written Dm7 here; older charts keep D7 through bars 21-24.",
+  "sections": [
+    {
+      "id": "A",
+      "label": "A",
+      "bars": [
+        "Cmaj7", "Cmaj7", "D7#11", "D7#11",
+        "Dm7", "G7", "Cmaj7", ["Dm7", "G7"]
+      ]
+    },
+    {
+      "id": "B",
+      "label": "B",
+      "bars": [
+        "Fmaj7", "Fmaj7", "Fmaj7", "Fmaj7",
+        "D7", "D7", "Dm7", "G7"
+      ]
+    },
+    {
+      "id": "A2",
+      "label": "A",
+      "bars": [
+        "Cmaj7", "Cmaj7", "D7#11", "D7#11",
+        "Dm7", "G7", "Cmaj7", "Cmaj7"
+      ]
+    }
+  ]
+}

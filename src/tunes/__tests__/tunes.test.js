@@ -1,19 +1,28 @@
 import { describe, expect, it } from 'vitest';
 import { TUNES, getTune } from '../index.js';
 import {
-  analyzeTune, barCount, tuneBars, tuneSlots, transposeTune, tuneSymbols, validateTune,
+  analyzeTune, barCount, beatsPerBar, tuneBars, tuneSlots, transposeTune, tuneSymbols,
+  validateTune,
 } from '../tune.js';
 import { parseChord } from '../../theory/index.js';
 
 describe('the tune library', () => {
-  it('has the five standards', () => {
+  it('lists the standards, easiest changes first', () => {
     expect(TUNES.map((t) => t.id)).toEqual([
-      'autumn-leaves',
+      'all-of-me',
       'blue-bossa',
       'bb-blues',
+      'autumn-leaves',
+      'take-the-a-train',
       'there-will-never-be-another-you',
+      'misty',
       'all-the-things-you-are',
+      'body-and-soul',
     ]);
+  });
+
+  it('gives every tune its own id', () => {
+    expect(new Set(TUNES.map((t) => t.id)).size).toBe(TUNES.length);
   });
 
   it.each(TUNES.map((t) => [t.title, t]))('%s is structurally valid', (_title, tune) => {
@@ -39,6 +48,10 @@ describe('the tune library', () => {
     expect(barCount(getTune('bb-blues'))).toBe(12);
     expect(barCount(getTune('there-will-never-be-another-you'))).toBe(32);
     expect(barCount(getTune('all-the-things-you-are'))).toBe(36);
+    expect(barCount(getTune('all-of-me'))).toBe(32);
+    expect(barCount(getTune('take-the-a-train'))).toBe(32);
+    expect(barCount(getTune('misty'))).toBe(32);
+    expect(barCount(getTune('body-and-soul'))).toBe(32);
   });
 });
 
@@ -137,5 +150,42 @@ describe('validateTune', () => {
       id: 'x', title: 'x', key: 'C', verified: false, form: ['A'],
       sections: [{ id: 'A', bars: ['Cmaj7', 'Hm7'] }],
     })).toContain('section "A" bar 2: cannot read "Hm7"');
+  });
+});
+
+describe('time signatures', () => {
+  /** A waltz, so the three-four path is covered before a waltz is added. */
+  const waltz = {
+    id: 'test-waltz',
+    title: 'Test Waltz',
+    key: 'Bb',
+    timeSignature: '3/4',
+    verified: false,
+    notes: 'a fixture',
+    form: ['A'],
+    sections: [{ id: 'A', label: 'A', bars: ['Bbmaj7', ['Cm7', 'F7'], 'Bbmaj7', 'Bbmaj7'] }],
+  };
+
+  it('reads the beats from the time signature', () => {
+    expect(beatsPerBar(waltz)).toBe(3);
+    expect(beatsPerBar(getTune('all-of-me'))).toBe(4);
+    expect(beatsPerBar({ ...waltz, timeSignature: undefined }), 'four-four by default').toBe(4);
+  });
+
+  it('shares a bar out between its chords, whatever the metre', () => {
+    const bars = tuneBars(waltz);
+    expect(bars[0].slots[0].beats).toBe(3);
+    expect(bars[1].slots.map((s) => s.beats)).toEqual([1.5, 1.5]);
+    expect(validateTune(waltz)).toEqual([]);
+  });
+
+  it('keeps every bar worth a full measure', () => {
+    for (const tune of [...TUNES, waltz]) {
+      const beats = beatsPerBar(tune);
+      for (const bar of tuneBars(tune)) {
+        const total = bar.slots.reduce((sum, slot) => sum + slot.beats, 0);
+        expect(total, `${tune.id} bar ${bar.barNumber}`).toBe(beats);
+      }
+    }
   });
 });

@@ -1,0 +1,37 @@
+{
+  "id": "misty",
+  "title": "Misty",
+  "composer": "Erroll Garner",
+  "key": "Eb",
+  "tonality": "Eb major",
+  "timeSignature": "4/4",
+  "form": ["A", "A", "B", "A2"],
+  "verified": false,
+  "notes": "AABA, 32 bars, written by a pianist and it shows: the A section is a chain of ii-Vs that sits well under two hands. Bar 7 | Gm7 C7 | is sometimes written | Ebmaj7 | or | Cm7 F7 |. The bridge bars 21-22 are written Am7 and D7 over two bars; many charts compress them to | Am7 D7 |, which leaves room for | Abmaj7 | in bar 23.",
+  "sections": [
+    {
+      "id": "A",
+      "label": "A",
+      "bars": [
+        "Ebmaj7", ["Bbm7", "Eb7"], "Abmaj7", ["Abm7", "Db7"],
+        ["Ebmaj7", "Cm7"], ["Fm7", "Bb7"], ["Gm7", "C7"], ["Fm7", "Bb7"]
+      ]
+    },
+    {
+      "id": "B",
+      "label": "B",
+      "bars": [
+        "Bbm7", "Eb7", "Abmaj7", "Abmaj7",
+        "Am7", "D7", ["Gm7", "C7"], ["Fm7", "Bb7"]
+      ]
+    },
+    {
+      "id": "A2",
+      "label": "A",
+      "bars": [
+        "Ebmaj7", ["Bbm7", "Eb7"], "Abmaj7", ["Abm7", "Db7"],
+        ["Ebmaj7", "Cm7"], ["Fm7", "Bb7"], "Ebmaj7", "Ebmaj7"
+      ]
+    }
+  ]
+}

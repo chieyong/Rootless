@@ -1,0 +1,33 @@
+{
+  "id": "all-of-me",
+  "title": "All Of Me",
+  "composer": "Gerald Marks and Seymour Simons",
+  "key": "C",
+  "tonality": "C major",
+  "timeSignature": "4/4",
+  "form": ["A", "B"],
+  "verified": false,
+  "notes": "32 bars, two sixteen-bar halves. Straightforward changes and a good one to start on: every chromatic chord is a secondary dominant resolving down a fourth. Bars 25-26 are written F6 and Fm6; many charts write them Fmaj7 and Fm7, or Fm6 as Bb7. The last bar is plain here and is usually turned around with | Dm7 G7 |.",
+  "sections": [
+    {
+      "id": "A",
+      "label": "A",
+      "bars": [
+        "Cmaj7", "Cmaj7", "E7", "E7",
+        "A7", "A7", "Dm7", "Dm7",
+        "E7", "E7", "Am7", "Am7",
+        "D7", "D7", "Dm7", "G7"
+      ]
+    },
+    {
+      "id": "B",
+      "label": "B",
+      "bars": [
+        "Cmaj7", "Cmaj7", "E7", "E7",
+        "A7", "A7", "Dm7", "Dm7",
+        "F6", "Fm6", "Cmaj7", "A7",
+        "Dm7", "G7", "Cmaj7", "Cmaj7"
+      ]
+    }
+  ]
+}

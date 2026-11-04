@@ -14,7 +14,7 @@ than a way to comp.
 ## Status
 
 **Phases 1 and 2 are done:** the theory engine, and the Changes module -
-five standards, a leadsheet you can play, and four kinds of quiz. Phase 3
+nine standards, a leadsheet you can play, and four kinds of quiz. Phase 3
 (ear training) and phase 4 (progress) are still to come.
 
 ## Getting started
@@ -37,6 +37,10 @@ open the network URL shown in the terminal.
 use Share -> Add to Home Screen; the app then runs full screen and works offline.
 
 ## The Changes module
+
+Nine standards, ordered roughly by how hard the changes are to hold on to:
+All Of Me, Blue Bossa, a Bb blues, Autumn Leaves, Take The A Train, There
+Will Never Be Another You, Misty, All The Things You Are and Body And Soul.
 
 Open a tune and you get a leadsheet, four bars to a line, with the sections
 labelled and every ii-V marked with a bracket underneath. Tap a bar to hear
