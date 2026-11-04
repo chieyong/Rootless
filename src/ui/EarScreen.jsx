@@ -1,5 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { EAR_BLOCKS, getLevel, levelsInBlock } from '../ear/levels.js';
+import { tuneLevels } from '../ear/tuneLevels.js';
+import { TUNES, getTune } from '../tunes/index.js';
 import { concatPlayback, generateEarRound, levelOptions } from '../ear/generators.js';
 import { makeRng } from '../quiz/rng.js';
 import useAudio from '../audio/useAudio.js';
@@ -35,9 +37,18 @@ export default function EarScreen() {
   const played = useRef(null);
   const mode = getRoundMode(roundId);
 
-  const level = getLevel(levelId);
-  const [blockId, setBlockId] = useState(level.block);
+  const [blockId, setBlockId] = useStored('ear:block', getLevel(levelId).block);
+  const [tuneId, setTuneId] = useStored('ear:tune', TUNES[0].id);
   const block = EAR_BLOCKS.find((b) => b.id === blockId) ?? EAR_BLOCKS[0];
+
+  // The tune block's levels are built from whichever tune is chosen; the rest
+  // are fixed. Either way the level has to come from the list on screen, or a
+  // stored id belonging to another block would win over the one just tapped.
+  const levels = useMemo(
+    () => (block.dynamic ? tuneLevels(getTune(tuneId)) : levelsInBlock(block.id)),
+    [block, tuneId],
+  );
+  const level = levels.find((item) => item.id === levelId) ?? levels[0];
   const settings = useMemo(() => ({
     ...(playOverride === 'level' ? {} : { play: playOverride }),
     ...(rootsOverride === 'level' ? {} : { roots: rootsOverride }),
@@ -129,16 +140,41 @@ export default function EarScreen() {
               className="chip"
               key={item.id}
               aria-pressed={item.id === blockId}
-              onClick={() => setBlockId(item.id)}
+              onClick={() => {
+                setBlockId(item.id);
+                const first = item.dynamic
+                  ? tuneLevels(getTune(tuneId))[0]
+                  : levelsInBlock(item.id)[0];
+                restart(first.id);
+              }}
             >
               {item.label}
             </button>
           ))}
         </div>
 
+        {block.dynamic && (
+          <>
+            <span className="label" style={{ marginTop: '0.875rem' }}>Tune</span>
+            <div className="chips" style={{ marginTop: 0 }}>
+              {TUNES.map((item) => (
+                <button
+                  type="button"
+                  className="chip small"
+                  key={item.id}
+                  aria-pressed={item.id === tuneId}
+                  onClick={() => { setTuneId(item.id); restart(tuneLevels(item)[0].id); }}
+                >
+                  {item.title}
+                </button>
+              ))}
+            </div>
+          </>
+        )}
+
         <span className="label" style={{ marginTop: '0.875rem' }}>{block.description}</span>
         <div className="chips" style={{ marginTop: 0 }}>
-          {levelsInBlock(blockId).map((item) => (
+          {levels.map((item) => (
             <button
               type="button"
               className="chip small"
@@ -146,7 +182,7 @@ export default function EarScreen() {
               aria-pressed={item.id === levelId}
               onClick={() => restart(item.id)}
             >
-              {item.id}
+              {block.dynamic ? item.label : item.id}
               {best[item.id] !== undefined && (
                 <span className="chip-score"> {best[item.id]}%</span>
               )}
@@ -185,9 +221,9 @@ export default function EarScreen() {
             </button>
           ))}
         </div>
-        {/* A comparison always uses two different roots, so the key setting
-            has nothing to do there. */}
-        {level.format !== 'same-different' && (
+        {/* A comparison always uses two different roots, and a tune's own
+            chords are asked in its own key, so neither can honour this. */}
+        {!['same-different', 'identify-tune-chord'].includes(level.format) && (
           <>
             <span className="label" style={{ marginTop: '0.75rem' }}>Key</span>
             <div className="chips" style={{ marginTop: 0 }}>

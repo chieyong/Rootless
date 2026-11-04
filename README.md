@@ -86,6 +86,17 @@ the hands, and what the chords are doing together.
 | Quality | A1-A8 | same or different, maj7 against m7 | four dominants against each other |
 | Voicing | B1-B4 | one hand or two | all four shapes at once |
 | Progression | C1-C3 | major or minor ii-V | tritone sub and backdoor in the mix |
+| Tune | two per tune | the qualities that tune uses | its own chords, in its own key |
+
+The Tune block builds its levels from whichever tune is chosen, so practising
+Take The A Train drills maj7, 7 and m7 and nothing else, while All The Things
+You Are brings in dim7 and 7alt.
+
+Its second level asks **which chord**, not which bar. Which bar cannot be
+asked: in Take The A Train not one chord appears in a single bar, and in most
+of the others only two or three do, so nearly every question would have
+several right answers. Naming the chord trains the same ear, and the answer
+says which bars it turns up in.
 
 A level is a point in seven dimensions rather than a rung on a ladder - how
 many options, a fixed or a random root, with or without a reference tone,

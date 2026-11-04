@@ -3,8 +3,11 @@ import { EAR_BLOCKS, EAR_LEVELS, getLevel, levelsInBlock, usedQualities } from '
 import { getProgression, PROGRESSION_KEYS, PROGRESSIONS } from '../progressions.js';
 import {
   concatPlayback, generateEarQuestion, generateEarRound, identifyFormQuestion,
-  identifyProgressionQuestion, identifyQuestion, levelOptions, sameOrDifferentQuestion,
+  identifyProgressionQuestion, identifyQuestion, identifyTuneChordQuestion, levelOptions,
+  sameOrDifferentQuestion,
 } from '../generators.js';
+import { tuneChords, tuneLevels } from '../tuneLevels.js';
+import { TUNES, getTune } from '../../tunes/index.js';
 import { makeRng } from '../../quiz/rng.js';
 import { qualityCopy } from '../../content/qualityCopy.js';
 import {
@@ -86,8 +89,13 @@ describe('the levels', () => {
     for (const level of EAR_LEVELS) {
       expect(blocks.has(level.block), `${level.id} has block ${level.block}`).toBe(true);
     }
-    for (const block of EAR_BLOCKS) {
+    for (const block of EAR_BLOCKS.filter((b) => !b.dynamic)) {
       expect(levelsInBlock(block.id).length, `${block.id} is empty`).toBeGreaterThan(0);
+    }
+    // A dynamic block builds its levels from something chosen on screen.
+    for (const block of EAR_BLOCKS.filter((b) => b.dynamic)) {
+      expect(levelsInBlock(block.id)).toEqual([]);
+      expect(tuneLevels(TUNES[0]).every((l) => l.block === block.id)).toBe(true);
     }
   });
 
@@ -462,5 +470,83 @@ describe('concatPlayback', () => {
   it('copes with nothing to play', () => {
     expect(concatPlayback([])).toEqual([]);
     expect(concatPlayback([[], [{ midi: [60], at: 0 }]])).toHaveLength(1);
+  });
+});
+
+describe('levels built from a tune', () => {
+  it('trains only the qualities the tune uses', () => {
+    const [colours] = tuneLevels(getTune('take-the-a-train'));
+    expect(colours.qualities).toEqual(['maj7', '7', 'm7']);
+    expect(colours.qualities, 'A Train has no half-diminished').not.toContain('m7b5');
+
+    const [allThings] = tuneLevels(getTune('all-the-things-you-are'));
+    expect(allThings.qualities).toContain('dim7');
+  });
+
+  it('lists every chord of the tune with the bars it is in', () => {
+    const chords = tuneChords(getTune('take-the-a-train'));
+    const g7 = chords.find((c) => c.symbol === 'G7');
+    expect(g7.bars).toEqual([6, 8, 14, 16, 24, 30]);
+    const fmaj7 = chords.find((c) => c.symbol === 'Fmaj7');
+    expect(fmaj7.bars).toEqual([17, 18, 19, 20]);
+  });
+
+  it('never offers two options that sound the same', () => {
+    // A tune may hold both a Cm6 and an Am7b5, which are the same four notes.
+    for (const tune of TUNES) {
+      const [, chordLevel] = tuneLevels(tune);
+      for (let seed = 1; seed <= 25; seed += 1) {
+        const question = identifyTuneChordQuestion(chordLevel, makeRng(seed));
+        const sounds = question.options.map(
+          (symbol) => sounded(buildVoicing(symbol, chordLevel.form)),
+        );
+        expect(new Set(sounds).size, `${tune.id}: ${question.options.join(' / ')}`)
+          .toBe(sounds.length);
+      }
+    }
+  });
+
+  it('asks about a chord that is really in the tune, and says where', () => {
+    for (const tune of TUNES) {
+      const [, chordLevel] = tuneLevels(tune);
+      const symbols = tuneChords(tune).map((c) => c.symbol);
+      for (let seed = 1; seed <= 10; seed += 1) {
+        const question = identifyTuneChordQuestion(chordLevel, makeRng(seed));
+        expect(symbols).toContain(question.answer);
+        for (const option of question.options) expect(symbols).toContain(option);
+        expect(question.explanation).toMatch(/In bars? \d/);
+      }
+    }
+  });
+
+  it('keeps the tune in the item key, so two tunes never share one', () => {
+    const [, a] = tuneLevels(getTune('misty'));
+    const [, b] = tuneLevels(getTune('body-and-soul'));
+    expect(identifyTuneChordQuestion(a, makeRng(1)).itemKey).toMatch(/^ear:tune:misty:/);
+    expect(identifyTuneChordQuestion(b, makeRng(1)).itemKey).toMatch(/^ear:tune:body-and-soul:/);
+  });
+
+  it('builds a playable, well-formed question for every tune', () => {
+    for (const tune of TUNES) {
+      for (const level of tuneLevels(tune)) {
+        for (let seed = 1; seed <= 10; seed += 1) {
+          const question = generateEarQuestion(level, makeRng(seed));
+          expect(question.options.length).toBeGreaterThanOrEqual(2);
+          expect(question.options).toContain(question.answer);
+          expect(new Set(question.options).size).toBe(question.options.length);
+          expect(question.playback[0].midi.length).toBeGreaterThan(0);
+          expect(question.compare.length).toBeGreaterThan(1);
+          expect(question.itemKey).toBeTruthy();
+        }
+      }
+    }
+  });
+
+  it('gives a tune with few chords as many options as it can', () => {
+    // Bb Blues has seven chords, so four options is never a problem; this
+    // guards the case where a tune is too small to fill them.
+    const [, level] = tuneLevels(getTune('bb-blues'));
+    const question = identifyTuneChordQuestion(level, makeRng(1));
+    expect(question.options.length).toBeGreaterThanOrEqual(3);
   });
 });

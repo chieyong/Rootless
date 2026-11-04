@@ -28,6 +28,7 @@ import {
 import { qualityCopy } from '../content/qualityCopy.js';
 import { voicingCopy } from '../content/voicingCopy.js';
 import { getProgression, PROGRESSION_KEYS } from './progressions.js';
+import { pitchClass } from '../theory/notes.js';
 import { pick, shuffle } from '../quiz/rng.js';
 
 const ROOTS = ['C', 'Db', 'D', 'Eb', 'E', 'F', 'Gb', 'G', 'Ab', 'A', 'Bb', 'B'];
@@ -73,14 +74,21 @@ function drawFrom(level, options) {
 export function itemKeyFor(level, option) {
   if (level.format === 'identify-form') return `ear:form:${option}`;
   if (level.format === 'identify-progression') return `ear:progression:${option}`;
+  if (level.format === 'identify-tune-chord') return `ear:tune:${level.tuneId}:${option}`;
   return `ear:quality:${option}`;
 }
 
 /** Every option a level can ask about, and the item key of each. */
 export function levelOptions(level) {
-  const options = level.progressions
+  const options = level.chords?.map((chord) => chord.symbol)
+    ?? level.progressions
     ?? (level.format === 'identify-form' ? level.forms : level.qualities);
   return options.map((option) => ({ option, key: itemKeyFor(level, option) }));
+}
+
+/** What a voicing actually sounds, which is all the ear has to go on. */
+function soundedPitchClasses(voicing) {
+  return [...new Set(voicing.midi.map((m) => ((m % 12) + 12) % 12))].sort((a, b) => a - b).join(',');
 }
 
 /** The chord symbol for a root and a canonical quality. */
@@ -313,12 +321,85 @@ export function identifyProgressionQuestion(level, rng, settings = {}) {
   };
 }
 
+
+/**
+ * "Which chord of this tune is this?" - one chord from the chart, in the
+ * tune's own key, against three others from the same chart.
+ *
+ * Distractors are picked for confusability - the same root with another
+ * quality, or the same quality on another root - but never one that sounds
+ * the same as the answer. Two different symbols can be the same four notes:
+ * a Cm6 and an Am7b5 are indistinguishable, and a tune may well contain both.
+ */
+export function identifyTuneChordQuestion(level, rng, settings = {}) {
+  const symbols = level.chords.map((chord) => chord.symbol);
+  const symbol = pick(rng, drawFrom(level, symbols));
+  const entry = level.chords.find((chord) => chord.symbol === symbol);
+  const chord = parseChord(symbol);
+  const voicing = buildVoicing(symbol, level.form);
+  const answerSound = soundedPitchClasses(voicing);
+
+  const sameRoot = [];
+  const sameQuality = [];
+  const rest = [];
+  for (const candidate of level.chords) {
+    if (candidate.symbol === symbol) continue;
+    const other = parseChord(candidate.symbol);
+    if (pitchClass(other.root) === pitchClass(chord.root)) sameRoot.push(candidate.symbol);
+    else if (other.type === chord.type) sameQuality.push(candidate.symbol);
+    else rest.push(candidate.symbol);
+  }
+
+  // No two options may sound alike - not just against the answer, but against
+  // each other. A D7#11 and a D7 are the same voicing here, because the
+  // rootless shape of a dominant voices 3-13-b7-9 and never the eleventh.
+  const used = new Set([answerSound]);
+  const distractors = [];
+  for (const pool of [sameRoot, sameQuality, rest]) {
+    for (const candidate of shuffle(rng, pool)) {
+      if (distractors.length >= 3) break;
+      const sound = soundedPitchClasses(buildVoicing(candidate, level.form));
+      if (used.has(sound)) continue;
+      used.add(sound);
+      distractors.push(candidate);
+    }
+  }
+
+  const options = shuffle(rng, [symbol, ...distractors]);
+  const bars = entry.bars.join(', ');
+  const copy = qualityCopy(chord.type);
+
+  return {
+    id: `${level.id}:chord:${symbol}:${Math.floor(rng() * 1e6)}`,
+    levelId: level.id,
+    itemKey: itemKeyFor(level, symbol),
+    format: 'identify-tune-chord',
+    prompt: 'Which chord of the tune is this?',
+    options,
+    answer: symbol,
+    playback: [{ midi: voicing.midi, at: 0 }],
+    compare: options.map((option) => ({
+      id: option,
+      label: option,
+      detail: `bar${level.chords.find((c) => c.symbol === option).bars.length > 1 ? 's' : ''} `
+        + level.chords.find((c) => c.symbol === option).bars.join(', '),
+      isAnswer: option === symbol,
+      playback: [{ midi: buildVoicing(option, level.form).midi, at: 0 }],
+    })),
+    play: playMode(level, settings),
+    reveal: symbol,
+    explanation: `${symbol} - ${readableNotes(chord)}. In bar${entry.bars.length > 1 ? 's' : ''} ${bars}.`
+      + (copy ? ` ${copy.hear}` : ''),
+  };
+}
+
 /** One question of whatever shape the level asks for. */
 export function generateEarQuestion(level, rng, settings = {}) {
   switch (level.format) {
     case 'same-different': return sameOrDifferentQuestion(level, rng, settings);
     case 'identify-form': return identifyFormQuestion(level, rng, settings);
     case 'identify-progression': return identifyProgressionQuestion(level, rng, settings);
+    case 'identify-tune-chord': return identifyTuneChordQuestion(level, rng, settings);
     default: return identifyQuestion(level, rng, settings);
   }
 }

@@ -21,6 +21,9 @@ export const EAR_BLOCKS = [
   { id: 'quality', label: 'Quality', description: 'What chord is it?' },
   { id: 'voicing', label: 'Voicing', description: 'How is it laid out?' },
   { id: 'progression', label: 'Progression', description: 'What are they doing together?' },
+  // Its levels are built from whichever tune is chosen, so levelsInBlock
+  // finds none: see tuneLevels.js.
+  { id: 'tune', label: 'Tune', description: 'What does this tune sound like?', dynamic: true },
 ];
 
 export const EAR_LEVELS = [
